@@ -1,0 +1,40 @@
+# Dev infrastructure for Polymath Swarm.
+# Phase 0: Postgres 16 + pgvector, Redis. Later phases add langfuse, sandbox, lean, api.
+name: polymath
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.7-pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-polymath}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-polymath}
+      POSTGRES_DB: ${POSTGRES_DB:-polymath}
+    ports:
+      - "${POSTGRES_PORT:-5544}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4.12-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
