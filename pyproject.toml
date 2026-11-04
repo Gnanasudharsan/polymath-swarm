@@ -1,6 +1,6 @@
 [project]
 name = "polymath"
-version = "0.0.0"
+version = "0.1.0"
 description = "Verification-first multi-agent swarm for research and mathematics (LangGraph + MCP + A2A + Lean 4)"
 readme = "README.md"
 license = "MIT"
@@ -9,9 +9,15 @@ authors = [{ name = "Gnanasudharsan Ashokumar" }]
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "httpx==0.28.1",
+    "litellm==1.108.0",
+    "openai==3.45.0",
+    "opentelemetry-api==1.45.2",
+    "opentelemetry-exporter-otlp-proto-http==1.45.2",
+    "opentelemetry-sdk==1.45.2",
     "psycopg[binary]==3.3.8",
     "pydantic==2.14.2",
     "pydantic-settings==2.16.2",
+    "python-dotenv==1.2.4",
     "redis==8.1.0",
     "structlog==26.1.0",
     "typer==0.27.3",
@@ -44,7 +50,7 @@ src = ["src", "tests"]
 extend-exclude = ["frontend"]
 
 [tool.ruff.lint]
-select = ["E", "W", "F", "I", "B", "UP", "N", "SIM", "RUF", "ASYNC", "S", "PTH", "TCH"]
+select = ["E", "W", "F", "I", "B", "UP", "N", "SIM", "RUF", "ASYNC", "S", "PTH"]
 ignore = []
 
 [tool.ruff.lint.per-file-ignores]
@@ -71,6 +77,10 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 addopts = "-ra --strict-markers -m 'not integration and not live'"
+filterwarnings = [
+    # LiteLLM's TypedDicts use ReadOnly, which Pydantic warns about at import time.
+    "ignore:.*ReadOnly.*qualifier:UserWarning",
+]
 markers = [
     "integration: needs Docker-backed services (run with -m integration)",
     "live: calls real paid LLM APIs (run with -m live)",

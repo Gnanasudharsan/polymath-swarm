@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow SemVer.
 
+## [0.1.0] - 2026-11-04
+
+### Added
+- Core domain models with DAG validation and claim lifecycle.
+- Settings, structured logging, OpenTelemetry tracing.
+- LiteLLM gateway: per-role models, retries, fallbacks, timeouts, budget-aware degradation.
+- Token/USD cost tracker and run-budget enforcement.
+- Structured-output helper with repair loop.
+- `BaseAgent`, versioned prompts, Reasoner agent, `polymath ask` CLI.
+- ADR-0002.
+
 ## [0.0.0] - 2026-11-04
 
 ### Added

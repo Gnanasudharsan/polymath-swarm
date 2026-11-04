@@ -9,8 +9,31 @@ Formalizer, Critic, Synthesizer) collaborate through a shared blackboard. Every 
 answer must carry evidence: a verified citation, a reproduced computation, or a Lean 4 proof with 0 `sorry`.
 
 ## Current phase
-- **Phase 0 — Bootstrap** (branch `phase-0-bootstrap`, tag `v0.0.0`) — in progress
-- Next: Phase 1 — Core runtime & LLM gateway
+- Done: Phase 0 (v0.0.0), Phase 1 — Core runtime & LLM gateway (v0.1.0)
+- Next: Phase 2 — MCP tool layer (`phase-2-mcp-tools`)
+
+## What exists (Phase 1)
+- `core/models.py` — all domain models; `TaskGraph` validates deps + cycles (Kahn), `ready_tasks()`;
+  `Claim.transition()` enforces the lifecycle (verified/refuted are terminal).
+- `core/budget.py` — `BudgetTracker` (tokens/USD/wall-clock/iterations, injectable clock), `BudgetExceededError`.
+- `core/config.py` — `Settings` (env prefix `POLYMATH_`, `.env`), role→model map; `load_env_file()` puts
+  provider keys into `os.environ` for LiteLLM.
+- `core/logging.py` (structlog → stderr, trace ids), `core/tracing.py` (OTel, OTLP/HTTP or console).
+- `llm/gateway.py` — `LLMGateway.complete(role, messages)`: budget check → model chain (degraded model
+  first near limit) → own retries w/ backoff on transient errors → fallback on others → cost + span.
+- `llm/cost.py` — `CostTracker`, `estimate_usd` (LiteLLM price map). `llm/structured.py` —
+  `complete_structured(gateway, role, messages, Schema)` with repair loop.
+- `agents/base.py` — `BaseAgent`, `AgentContext`, `AgentResult`, `ToolSpec`; prompts are
+  `agents/prompts/<name>.v<N>.md` loaded by `load_prompt`. `agents/reasoner.py` — `ReasonerAgent`.
+- `cli.py` — `polymath ask "..." [--model M] [--max-usd X] [--json]`.
+- Tests: fake completion in `tests/conftest.py` (`FakeCompletion`, `settings` fixture).
+  Live tests pick Claude Haiku if `ANTHROPIC_API_KEY` else `gpt-5-mini` (dev machine has only OpenAI key).
+
+## Gotchas
+- Claude 5.x rejects sampling params → gateway always passes `drop_params=True`.
+- Catch `openai.OpenAIError` (not `litellm.exceptions.OpenAIError`) as the base of LiteLLM API errors.
+- Ruff `TC` rules are disabled: Pydantic needs annotations importable at runtime.
+- Postgres in compose is on host port 5544 (5432 is taken locally).
 
 ## Architecture (target)
 ```
