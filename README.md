@@ -9,7 +9,7 @@ computation, formal verification, critique, synthesis) collaborate through a sha
 Every claim in the final answer carries evidence: a verified citation, a reproduced computation,
 or a Lean 4 proof that compiles with zero `sorry`.
 
-> **Status:** early development — Phase 0 (bootstrap). See [PROGRESS.md](PROGRESS.md).
+> **Status:** early development — Phase 1 (core runtime & LLM gateway) complete. See [PROGRESS.md](PROGRESS.md).
 
 ## Architecture
 
@@ -58,8 +58,12 @@ uv run pytest -q
 ```
 
 ```bash
-uv run polymath version
+uv run polymath ask "Prove that the square root of 2 is irrational."
 ```
+
+`ask` runs a single Reasoner (needs a provider key in `.env`; use `--model` to pick one, `--max-usd`
+to cap spend, `--json` for machine-readable output). Claims it prints are *proposed* — the
+verification pipeline arrives in later phases.
 
 Postgres is exposed on host port **5544** and Redis on **6379**.
 
