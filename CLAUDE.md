@@ -48,7 +48,7 @@ uv run mypy src                  # strict type check
 uv run pytest -q                 # unit tests (integration/live skipped by default)
 uv run pytest -m integration     # Docker-backed tests
 uv run pytest -m live            # real LLM calls (costs money)
-docker compose up -d             # postgres+pgvector, redis
+docker compose up -d --wait      # postgres+pgvector (host :5544), redis (:6379)
 uv run pre-commit install        # git hooks
 ```
 

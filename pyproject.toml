@@ -9,8 +9,10 @@ authors = [{ name = "Gnanasudharsan Ashokumar" }]
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "httpx==0.28.1",
+    "psycopg[binary]==3.3.8",
     "pydantic==2.14.2",
     "pydantic-settings==2.16.2",
+    "redis==8.1.0",
     "structlog==26.1.0",
     "typer==0.27.3",
 ]
