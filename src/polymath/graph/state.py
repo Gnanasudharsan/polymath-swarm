@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Annotated, TypedDict
+from typing import Annotated, Any, TypedDict
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from polymath.agents.base import AgentResult
-from polymath.core.models import Problem, RunBudget, TaskGraph, TaskStatus
+from polymath.core.models import Claim, Problem, RunBudget, TaskGraph, TaskStatus
+from polymath.verification.claims import merge_claims
 
 
 class RunStatus(StrEnum):
@@ -56,6 +57,11 @@ class SwarmState(TypedDict, total=False):
     plan_feedback: str
     approved: bool
     results: Annotated[dict[str, AgentResult], merge_results]
+    claims: Annotated[dict[str, Claim], merge_claims]
+    revision_rounds: int
+    handled_claims: list[str]
+    report: dict[str, Any]
+    report_markdown: str
     usage: Annotated[Usage, add_usage]
     iterations: int
     elapsed_s: float

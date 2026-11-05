@@ -33,3 +33,6 @@ evals/reports/raw/
 .DS_Store
 .idea/
 .vscode/
+
+# Evidence reports from local runs (examples/ keeps committed ones)
+reports/

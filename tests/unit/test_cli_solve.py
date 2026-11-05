@@ -47,7 +47,7 @@ def mocked(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.mark.usefixtures("mocked")
 def test_solve_in_memory() -> None:
-    result = CliRunner().invoke(cli.app, ["solve", "Is 2n even?", "--memory"])
+    result = CliRunner().invoke(cli.app, ["solve", "Is 2n even?", "--memory", "--no-tools"])
     assert result.exit_code == 0, result.output
     assert "completed" in result.stdout
     assert "Yes, it is even." in result.stdout
@@ -57,7 +57,7 @@ def test_solve_in_memory() -> None:
 @pytest.mark.usefixtures("mocked")
 def test_solve_with_plan_approval_prompt() -> None:
     result = CliRunner().invoke(
-        cli.app, ["solve", "Is 2n even?", "--memory", "--approve-plan"], input="y\n"
+        cli.app, ["solve", "Is 2n even?", "--memory", "--no-tools", "--approve-plan"], input="y\n"
     )
     assert result.exit_code == 0, result.output
     assert "Proposed plan" in result.stdout and "completed" in result.stdout

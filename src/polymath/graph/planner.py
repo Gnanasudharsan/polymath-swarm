@@ -103,18 +103,64 @@ def _ancestors(graph: TaskGraph, task_id: str) -> set[str]:
     return seen
 
 
+# Adaptive topology: the specialists each problem type must include.
+REQUIRED_TYPES: dict[ProblemType, tuple[TaskType, ...]] = {
+    ProblemType.PROOF: (TaskType.REASONING, TaskType.FORMALIZATION, TaskType.CRITIQUE),
+    ProblemType.COMPUTATION: (TaskType.COMPUTATION, TaskType.CRITIQUE),
+    ProblemType.LITERATURE: (TaskType.LITERATURE_SEARCH,),
+    ProblemType.MIXED: (TaskType.REASONING, TaskType.CRITIQUE),
+}
+_PRODUCERS = (TaskType.REASONING, TaskType.LITERATURE_SEARCH, TaskType.COMPUTATION)
+_DEFAULT_DESCRIPTIONS: dict[TaskType, str] = {
+    TaskType.LITERATURE_SEARCH: "Find primary sources that answer the problem; quote them.",
+    TaskType.REASONING: "Work out a rigorous answer; state atomic claims.",
+    TaskType.COMPUTATION: "Establish or test the key claims by exact computation.",
+    TaskType.FORMALIZATION: "State and prove the main claims in Lean 4 + Mathlib.",
+    TaskType.CRITIQUE: "Review all claims adversarially; search for counterexamples.",
+}
+
+
+def ensure_team(graph: TaskGraph, problem_type: ProblemType | None) -> TaskGraph:
+    """Add any specialist the problem type requires but the plan lacks, wired into synthesis.
+
+    Producers (reasoning/literature/computation) start immediately; formalization and critique
+    depend on every producer so they see the claims to check.
+    """
+    required = REQUIRED_TYPES.get(problem_type or ProblemType.MIXED, ())
+    present = {t.type for t in graph.tasks.values()}
+    missing = [t for t in required if t not in present]
+    if not missing:
+        return graph
+    tasks = {tid: t.model_copy(deep=True) for tid, t in graph.tasks.items()}
+    synth = next(t for t in tasks.values() if t.type is TaskType.SYNTHESIS)
+    for ttype in sorted(missing, key=lambda t: t not in _PRODUCERS):
+        producers = [t.id for t in tasks.values() if t.type in _PRODUCERS]
+        tid = f"auto_{ttype.value}"
+        tasks[tid] = Task(
+            id=tid,
+            type=ttype,
+            assigned_role=ROLE_FOR_TYPE[ttype],
+            description=_DEFAULT_DESCRIPTIONS[ttype],
+            deps=[] if ttype in _PRODUCERS else producers,
+        )
+        synth = synth.model_copy(update={"deps": [*synth.deps, tid]})
+        tasks[synth.id] = synth
+    log.info("planner.team_added", problem_type=problem_type, added=[t.value for t in missing])
+    return TaskGraph(tasks=tasks)
+
+
 def default_plan(problem: Problem) -> TaskGraph:
-    """Fallback when the planner cannot produce a valid plan: reason, critique, synthesise."""
-    return TaskGraph.from_tasks(
+    """Fallback when the planner cannot produce a valid plan: the required team for the
+    problem type, producers first, then checkers, then synthesis."""
+    base = TaskGraph.from_tasks(
         [
             Task(id="reason", type=TaskType.REASONING, assigned_role=AgentRole.REASONER,
                  description=f"Work out a rigorous answer to: {problem.statement}"),
-            Task(id="critique", type=TaskType.CRITIQUE, assigned_role=AgentRole.CRITIC,
-                 deps=["reason"], description="Review the reasoning for errors and gaps."),
             Task(id="synthesize", type=TaskType.SYNTHESIS, assigned_role=AgentRole.SYNTHESIZER,
-                 deps=["reason", "critique"], description="Write the final answer."),
+                 deps=["reason"], description="Write the final answer from verified claims."),
         ]
     )  # fmt: skip
+    return ensure_team(base, problem.problem_type or ProblemType.MIXED)
 
 
 class LLMPlanner:
@@ -152,6 +198,6 @@ class LLMPlanner:
                 continue
             if problem.problem_type is None:
                 problem.problem_type = ProblemType(result.value.problem_type)
-            return graph, usage
+            return ensure_team(graph, problem.problem_type), usage
         log.warning("planner.fallback_plan", problem_id=problem.id)
         return default_plan(problem), usage

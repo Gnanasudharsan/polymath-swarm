@@ -31,6 +31,7 @@ class RunContext:
     budget: BudgetTracker
     require_approval: bool = False
     max_plan_rounds: int = 3
+    max_revision_rounds: int = 2
     max_parallel: int = 8
     task_timeout_s: float = 600.0
     _segment_start: float | None = field(default=None, init=False, repr=False)

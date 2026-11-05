@@ -105,7 +105,9 @@ async def test_llm_planner_repairs_cyclic_plan(settings: Settings) -> None:
     planner = LLMPlanner(LLMGateway(settings, completion_fn=fake, sleep=no_sleep))
     problem = Problem(statement="What is 2^10?")
     graph, usage = await planner.plan(problem, feedback="keep it short")
-    assert set(graph.tasks) == {"calc", "synth"}
+    # adaptive team: a computation problem always gets a critic
+    assert set(graph.tasks) == {"calc", "auto_critique", "synth"}
+    assert graph.tasks["auto_critique"].deps == ["calc"]
     assert problem.problem_type is not None and problem.problem_type.value == "computation"
     assert len(usage) == 2
     assert "cycle" in fake.calls[1]["messages"][-1]["content"]
@@ -116,4 +118,18 @@ async def test_llm_planner_falls_back_to_default(settings: Settings) -> None:
     fake = FakeCompletion([CYCLIC, CYCLIC, CYCLIC])
     planner = LLMPlanner(LLMGateway(settings, completion_fn=fake, sleep=no_sleep))
     graph, _ = await planner.plan(Problem(statement="p"))
-    assert set(graph.tasks) == {"reason", "critique", "synthesize"}
+    assert set(graph.tasks) == {"reason", "auto_critique", "synthesize"}
+
+
+def test_proof_team_adds_formalizer_and_critic_after_producers() -> None:
+    from polymath.core.models import ProblemType
+    from polymath.graph.planner import ensure_team
+
+    g = to_task_graph(_spec(("lit", TaskType.LITERATURE_SEARCH, []), ("s", S, ["lit"])))
+    team = ensure_team(g, ProblemType.PROOF)
+    assert {"auto_reasoning", "auto_formalization", "auto_critique"} <= set(team.tasks)
+    assert team.tasks["auto_reasoning"].deps == []
+    assert set(team.tasks["auto_formalization"].deps) == {"lit", "auto_reasoning"}
+    assert {"auto_formalization", "auto_critique"} <= set(team.tasks["s"].deps)
+    assert team.topological_order()[-1] == "s"
+    assert ensure_team(team, ProblemType.PROOF) is team  # idempotent
