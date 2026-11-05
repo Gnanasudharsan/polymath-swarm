@@ -109,6 +109,24 @@ def test_merge_prefers_refuted_and_unions_evidence() -> None:
     assert merge_claim(merged, base).status == ClaimStatus.REFUTED  # never downgraded
 
 
+def test_quote_matching_survives_different_typesetting() -> None:
+    # Semantic Scholar vs arXiv renderings of the same abstract sentence (arXiv 2303.09521)
+    s2 = (
+        "We prove that \\[ R(k) \\leqslant (4 - \\varepsilon)^k \\] "
+        "for some constant \\varepsilon>0."
+    )
+    arxiv = (
+        "We prove that \\[ R(k) \\leqslant (4 - \\varepsilon)^k \\] for some constant "
+        "$\\varepsilon > 0$. This is the first exponential improvement"
+    )
+    assert quote_in_source(s2, arxiv)
+    # word boundaries matter: a quote can't match across a partial word
+    assert not quote_in_source(
+        "prove that r k 4 k for some constant varepsilon 0 this is the fir", arxiv
+    )
+    assert not quote_in_source("We prove that R(k) is at most 3^k for every k", arxiv)
+
+
 def test_quote_matching_is_whitespace_and_tex_insensitive() -> None:
     src = "The odd-Ramsey number $r_{odd}(n,H)$ of a graph\n  H is the minimum number of colors"
     assert quote_in_source("the odd-Ramsey number r_odd(n,H) of a graph H is the minimum", src)

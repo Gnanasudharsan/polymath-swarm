@@ -98,15 +98,25 @@ def counterexample_in(stdout: str) -> str | None:
     return None
 
 
-_WS = re.compile(r"\s+")
-_TEX = re.compile(r"[$\\{}]")
+_TEX_COMMAND = re.compile(r"\\[A-Za-z]+")
+_NON_WORD = re.compile(r"[^0-9a-z]+")
+MIN_QUOTE_WORDS = 6
 
 
 def normalise_text(text: str) -> str:
-    """Lower-case, strip TeX punctuation and collapse whitespace for quote matching."""
-    return _WS.sub(" ", _TEX.sub("", text.lower())).strip()
+    """Word sequence for quote matching: lower-case, TeX commands and punctuation removed.
+
+    Sources typeset the same sentence differently (``$\\le$`` vs ``\\leqslant``, ``x>0`` vs
+    ``x > 0``), so matching is on the words, not on the exact characters.
+    """
+    text = _TEX_COMMAND.sub(" ", text.lower())
+    return " ".join(_NON_WORD.sub(" ", text).split())
 
 
-def quote_in_source(quote: str, source_text: str, *, min_chars: int = 20) -> bool:
-    q = normalise_text(quote).strip(" .\"'…")
-    return len(q) >= min_chars and q in normalise_text(source_text)
+def quote_in_source(quote: str, source_text: str, *, min_words: int = MIN_QUOTE_WORDS) -> bool:
+    """True if the quote's words appear contiguously in the source (and the quote is long
+    enough to be meaningful)."""
+    q = normalise_text(quote)
+    if len(q.split()) < min_words:
+        return False
+    return f" {q} " in f" {normalise_text(source_text)} "
