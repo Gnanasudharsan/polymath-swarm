@@ -49,8 +49,10 @@ async def run(name: str, max_usd: float) -> None:
     values = snap.values
     if values.get("report"):
         (out / "report.md").write_text(values["report_markdown"], encoding="utf-8")
-        (out / "report.json").write_text(json.dumps(values["report"], indent=2, ensure_ascii=False))
-    (out / "trace.json").write_text(json.dumps(trace, indent=2, ensure_ascii=False))
+        (out / "report.json").write_text(
+            json.dumps(values["report"], indent=2, ensure_ascii=False) + "\n"
+        )
+    (out / "trace.json").write_text(json.dumps(trace, indent=2, ensure_ascii=False) + "\n")
     usage = values.get("usage")
     print(f"{name}: run {snap.run_id} → {snap.status}; ${usage.usd if usage else 0:.4f}")
     if values.get("report"):

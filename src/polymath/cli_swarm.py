@@ -78,7 +78,7 @@ def write_report(snap: RunSnapshot, directory: Path) -> list[Path]:
     directory.mkdir(parents=True, exist_ok=True)
     md, js = directory / f"{snap.run_id}.md", directory / f"{snap.run_id}.json"
     md.write_text(v.get("report_markdown", ""), encoding="utf-8")
-    js.write_text(json.dumps(v["report"], indent=2, ensure_ascii=False), encoding="utf-8")
+    js.write_text(json.dumps(v["report"], indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return [md, js]
 
 

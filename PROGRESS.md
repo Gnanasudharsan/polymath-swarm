@@ -1,5 +1,30 @@
 # Progress
 
+## Phase 4 — Specialists & verification loop (2026-11-05)
+
+**Shipped**
+- Six specialists with versioned prompts: Literature (verbatim-quote citations), Reasoner, Compute
+  (explore → assert, sandbox PASS/FAIL programs), Formalizer (Lean repair loop, Mathlib automation
+  rescue, back-translation + equivalence judge, proof re-matching), Critic (counterexample searches),
+  Synthesizer (cites only verified claims)
+- Claim lifecycle across tasks (run-wide claims store with merge rules)
+- Verification gate that independently re-checks every piece of evidence
+- Critique loop: refuted/challenged claims insert revision rounds before synthesis (≤ 2)
+- Adaptive team per problem type; budget degradation skips optional work near the ceiling
+- Evidence report (Markdown + JSON); `polymath solve` writes it
+- Model profiles (`anthropic` default, `openai`) and a cross-run spend ledger with a hard cap
+- Three live demos in `examples/` (proof, computation, literature), each with a verified report
+- ADR-0006
+
+**Metrics**: 162 unit tests, 30 integration tests, all passing. Demo cost: proof $0.063, computation
+$0.011, literature $0.007. Total Phase 4 LLM spend incl. development runs: $0.80 of the $5 cap.
+The false claim "n² + n + 41 is prime for all n" is refuted by the Critic (n = 40) and the gate
+reproduces it, with fake tools and on the real Docker sandbox.
+
+**Known gaps**: literature results vary between runs (search ranking); citation checks use titles and
+abstracts only (full text in Phase 5); the equivalence judge is an LLM (it can only block proofs, not
+admit them); duplicate claims from different agents are not merged by meaning.
+
 ## Phase 3 — Orchestration (2026-11-05)
 
 **Shipped**

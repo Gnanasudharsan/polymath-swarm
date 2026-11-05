@@ -10,8 +10,10 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 
 ## Current phase
 - Done: Phase 0 (v0.0.0), Phase 1 core runtime (v0.1.0), Phase 2 MCP tools (v0.2.0),
-  Phase 3 orchestration (v0.3.0)
-- Next: Phase 4 — Specialists & verification loop. **Ask the user before starting** (cost/infra).
+  Phase 3 orchestration (v0.3.0), Phase 4 specialists & verification (v0.4.0)
+- Next: Phase 5 — Memory & knowledge (`phase-5-memory`)
+- User decisions for LLM work: OpenAI models (no Anthropic key on this machine), **$5 total cap**
+  enforced by the spend ledger in `.env` (`.sandbox/spend.jsonl`). Phase 4 spent $0.80.
 
 ## What exists (Phase 1)
 - `core/models.py` — all domain models; `TaskGraph` validates deps + cycles (Kahn), `ready_tasks()`;
@@ -61,6 +63,21 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
   [--approve/--reject/--feedback]`, `trace RUN_ID -o f.json`, `graph`.
 - Test fakes: `tests/swarm_fakes.py` (FixedPlanner, FakeExecutor, make_factory, run_in_child).
 
+## What exists (Phase 4)
+- Specialists (`agents/`): `literature.py`, `reasoner.py`, `compute.py` (explore → assert),
+  `formalizer.py` (+ `lean_auto.py`: exact?/omega/... rescue; back-translation sees definitions;
+  re-matches proofs to the claim they prove), `critic.py`, `synthesizer.py`. `registry.specialists()`.
+- `agents/tools.py` — `Tools` protocol + `MCPTools`; `open_tools(settings)` mounts all servers in-process.
+- `verification/` — `evidence.py` (typed payloads, PASS/FAIL/COUNTEREXAMPLE markers, word-level quote
+  matching), `claims.py` (merge; refuted > verified > challenged > proposed), `gate.py` (re-checks
+  everything), `report.py` (`EvidenceReport`, Markdown).
+- Graph: `SwarmState.claims` store; `graph/revision.py` critique loop (≤ 2 rounds, optional tasks
+  skipped near budget); synthesis tolerates failed inputs; per-task usage via `llm/usage_scope.py`.
+- Planner `ensure_team()` per problem type. Settings `model_profile` (`anthropic`|`openai`),
+  `spend_ledger` + `spend_cap_usd` (`llm/ledger.py`).
+- Demos: `examples/run_demo.py proof|computation|literature`; outputs committed under `examples/`.
+- Test helpers: `tests/agent_fakes.py` (`FakeTools` runs programs locally; `lean_fn` decides by code).
+
 ## Gotchas
 - Claude 5.x rejects sampling params → gateway always passes `drop_params=True`.
 - Catch `openai.OpenAIError` (not `litellm.exceptions.OpenAIError`) as the base of LiteLLM API errors.
@@ -77,6 +94,9 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 - **LiteLLM calls `load_dotenv()` on import**, so `.env` values (model profile, spend ledger) enter
   `os.environ`. `tests/conftest.py` strips `POLYMATH_*` per test and sets `POLYMATH_NO_DOTENV=1`;
   never build `Settings` at test-module import time (use the `settings`/`infra_settings` fixtures).
+- Never open `MCPToolbox`/`open_tools` in an async-generator fixture: anyio needs enter/exit in
+  the same task. Open it inside the test body.
+- gpt-5 Formalizer calls take 30–100 s each; formalization has a 1500 s task timeout.
 - zsh: don't put a command in a variable (`$R`) — it won't word-split; use a function.
 
 ## Architecture (target)

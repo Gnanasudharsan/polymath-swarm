@@ -1,6 +1,6 @@
 [project]
 name = "polymath"
-version = "0.3.0"
+version = "0.4.0"
 description = "Verification-first multi-agent swarm for research and mathematics (LangGraph + MCP + A2A + Lean 4)"
 readme = "README.md"
 license = "MIT"
