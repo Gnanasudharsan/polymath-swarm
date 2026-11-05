@@ -27,6 +27,7 @@ from polymath.verification.evidence import (
     FormalProofPayload,
     computation_outcome,
     counterexample_in,
+    normalise_text,
     payload_of,
     quote_in_source,
 )
@@ -105,6 +106,8 @@ class VerificationGate:
 
     async def _citation(self, p: CitationPayload) -> tuple[CheckOutcome, str]:
         paper = await self.tools.fetch_paper(p.source, p.paper_id)
+        if normalise_text(paper.title) != normalise_text(p.title):
+            return "inconclusive", f"cited title does not match {p.source}:{p.paper_id}"
         text = f"{paper.title}\n{paper.abstract}"
         if quote_in_source(p.quote, text):
             return "supports", f"quote found in {p.source}:{p.paper_id} ({paper.title})"

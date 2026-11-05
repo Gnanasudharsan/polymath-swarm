@@ -64,6 +64,8 @@ class TestGate:
         fake = good.model_copy(update={"quote": "the Transformer is the best model ever built"})
         assert (await gate.decide(_claim(good))).verified
         assert not (await gate.decide(_claim(fake))).verified
+        wrong_title = good.model_copy(update={"title": "Some Other Paper"})
+        assert (await gate.decide(_claim(wrong_title))).checks[0].detail.startswith("cited title")
         missing = good.model_copy(update={"paper_id": "9999.99999"})
         d = await gate.decide(_claim(missing))
         assert d.checks[0].outcome == "inconclusive"
