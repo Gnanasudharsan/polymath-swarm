@@ -1,5 +1,26 @@
 # Progress
 
+## Phase 5 — Memory & knowledge (2026-11-05)
+
+**Shipped**
+- Paper ingestion: arXiv PDF → pypdf text → sentence-aware chunks → local bge-small embeddings → Postgres + pgvector
+- Hybrid retrieval: Postgres full-text + HNSW vectors, reciprocal rank fusion, local cross-encoder rerank
+- `knowledge` MCP server; Literature agent ingests top arXiv hits and cites full-text passages
+- Citation verification against the re-ingested full text (and title match)
+- Episodic memory and claims store: runs and gate verdicts recorded; verified claims recalled into
+  related runs as proposed claims with provenance, re-verified by the gate
+- Labeled retrieval eval set (original passages) and runner; ADR-0007; model cache in CI
+
+**Metrics**: 176 unit tests, 36 integration tests, all passing. Retrieval (Postgres, real models):
+hybrid + rerank recall@10 0.983, MRR 0.950 (lexical 0.983 / 0.897, vector 0.933 / 0.867). Live reuse
+demo: a verified theorem from an earlier run was recalled (similarity 0.934) and re-verified ($0.096).
+
+**Fixed along the way**: cross-run laundering (claims could be remembered as verified after the gate
+rejected them), test data leaking into shared memory, NUL bytes from PDFs, missing BGE query prefix.
+
+**Known gaps**: lexical side is Postgres FTS (BM25-like, not exact BM25); recall can return claims
+that the Reasoner then re-proposes (no semantic de-duplication); the eval corpus is small (60 passages).
+
 ## Phase 4 — Specialists & verification loop (2026-11-05)
 
 **Shipped**

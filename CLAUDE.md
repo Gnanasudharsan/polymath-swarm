@@ -10,10 +10,12 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 
 ## Current phase
 - Done: Phase 0 (v0.0.0), Phase 1 core runtime (v0.1.0), Phase 2 MCP tools (v0.2.0),
-  Phase 3 orchestration (v0.3.0), Phase 4 specialists & verification (v0.4.0)
-- Next: Phase 5 — Memory & knowledge (`phase-5-memory`)
+  Phase 3 orchestration (v0.3.0), Phase 4 specialists & verification (v0.4.0),
+  Phase 5 memory & knowledge (v0.5.0)
+- Next: Phase 6 — Evals, observability, cost (`phase-6-evals`)
 - User decisions for LLM work: OpenAI models (no Anthropic key on this machine), **$5 total cap**
-  enforced by the spend ledger in `.env` (`.sandbox/spend.jsonl`). Phase 4 spent $0.80.
+  enforced by the spend ledger in `.env` (`.sandbox/spend.jsonl`). Phase 4 spent $0.80, Phase 5
+  about $0.37 (ledger ≈ $1.17 after Phase 5).
 
 ## What exists (Phase 1)
 - `core/models.py` — all domain models; `TaskGraph` validates deps + cycles (Kahn), `ready_tasks()`;
@@ -78,6 +80,17 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 - Demos: `examples/run_demo.py proof|computation|literature`; outputs committed under `examples/`.
 - Test helpers: `tests/agent_fakes.py` (`FakeTools` runs programs locally; `lean_fn` decides by code).
 
+## What exists (Phase 5)
+- `memory/` — `embeddings.py` (`FastEmbedder` bge-small + BGE query prefix, `CrossEncoderReranker`,
+  `HashEmbedder` for tests), `text.py` (pypdf pages, clean, chunk), `models.py` (records +
+  `KnowledgeStore` protocol), `pg.py` (Postgres/pgvector store, FTS lexical), `inmemory.py` (BM25),
+  `retrieval.py` (RRF + rerank), `ingest.py` (`Ingestor.ingest_arxiv/ingest_text`), `episodic.py`,
+  `knowledge.py` (`open_knowledge(settings)` → `Knowledge`), `evaluation.py` (recall@k/MRR).
+- `mcp_servers/knowledge` — search / ingest_arxiv / paper_text. `Tools.has_knowledge`.
+- Graph: plan recalls verified claims (≥ 0.80 sim, must have non-critique evidence) as **proposed**
+  with `origin_run_id`; `finalize` stores the gate report's verdicts (`claims_to_remember`).
+- Eval: `evals/datasets/retrieval/` (60 passages, 30 queries), `evals/runners/retrieval.py` → report.
+
 ## Gotchas
 - Claude 5.x rejects sampling params → gateway always passes `drop_params=True`.
 - Catch `openai.OpenAIError` (not `litellm.exceptions.OpenAIError`) as the base of LiteLLM API errors.
@@ -97,6 +110,9 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 - Never open `MCPToolbox`/`open_tools` in an async-generator fixture: anyio needs enter/exit in
   the same task. Open it inside the test body.
 - gpt-5 Formalizer calls take 30–100 s each; formalization has a 1500 s task timeout.
+- The claims merge never downgrades status, so anything persisted must come from the gate's report,
+  not from merged state. Integration tests writing to shared tables must delete their rows.
+- Real PDF text contains NUL bytes (Postgres rejects them) — `text.clean` strips control chars.
 - zsh: don't put a command in a variable (`$R`) — it won't word-split; use a function.
 
 ## Architecture (target)

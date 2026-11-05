@@ -46,7 +46,7 @@ flowchart TD
 | Tools | `polymath.mcp_servers` | FastMCP servers: literature, sandbox, sympy, lean; MCP client adapter | 2 |
 | Orchestration | `polymath.graph` | LangGraph `StateGraph`, supervisor, router, Postgres checkpointer, HITL interrupts | 3 |
 | Blackboard | `polymath.blackboard` | Redis pub/sub for live events, Postgres for durable history | 3 |
-| Memory | `polymath.memory` | pgvector paper chunks, hybrid retrieval, episodic memory, claims store | 5 |
+| Memory | `polymath.memory` | pgvector paper chunks, hybrid retrieval, episodic memory, claims store; `knowledge` MCP server | 5 |
 | Interop | `polymath.a2a` | A2A Agent Cards, server and client | 8 |
 | API | `polymath.api` | FastAPI, SSE run streaming, API-key auth | 7 |
 | Frontend | `frontend/` | Next.js + React Flow live task graph, claim panel, cost meter | 7 |
@@ -132,6 +132,21 @@ flowchart LR
     S --> Rep[(Evidence report<br/>Markdown + JSON)]
     J --> Rep
 ```
+
+## Memory & knowledge (Phase 5)
+
+```mermaid
+flowchart LR
+    A[arXiv PDF] --> X[pypdf text] --> CH[chunks] --> E[bge-small embeddings]
+    E --> PG[(Postgres + pgvector<br/>chunks · FTS · HNSW)]
+    Q[query] --> L[full-text search] & V[vector search]
+    PG --> L & V
+    L & V --> F[RRF fusion] --> RR[cross-encoder rerank] --> H[top-k passages]
+    R[finished run] -->|gate verdicts| CS[(runs + claims)]
+    CS -->|similar verified claims, as proposed| N[new run]
+```
+
+See ADR-0007. Recalled claims keep their evidence and `origin_run_id`; the gate re-verifies them.
 
 ## Budget & degradation
 

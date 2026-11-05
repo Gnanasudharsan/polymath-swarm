@@ -9,7 +9,7 @@ computation, formal verification, critique, synthesis) collaborate through a sha
 Every claim in the final answer carries evidence: a verified citation, a reproduced computation,
 or a Lean 4 proof that compiles with zero `sorry`.
 
-> **Status:** early development — Phase 4 (specialists & verification) complete. See [PROGRESS.md](PROGRESS.md).
+> **Status:** early development — Phase 5 (memory & knowledge) complete. See [PROGRESS.md](PROGRESS.md).
 
 ## Architecture
 
@@ -95,6 +95,15 @@ refuted. Use `--memory` to run without Postgres/Redis and `--no-tools` for a Rea
 | n·(n+1) is even for all n ∈ ℕ | Lean 4 + Mathlib proof, back-translation judged faithful | $0.063 |
 | Sum of the first 100 primes (24133, prime) | sandbox computation, re-run by the gate | $0.011 |
 | 2023 exponential improvement for diagonal Ramsey numbers | verbatim quotes in re-fetched arXiv abstracts | $0.007 |
+| n·(n+1)·(n+2) is even, after an earlier run proved it | recalled from episodic memory, Lean proof re-verified | $0.096 |
+
+### Memory
+
+Papers are ingested (arXiv PDF → chunks → local embeddings) into Postgres + pgvector and searched
+with hybrid retrieval (full-text + vectors, rank fusion, cross-encoder rerank). On the labeled
+retrieval set ([evals/reports](evals/reports/)), hybrid + rerank reaches **recall@10 = 0.983, MRR =
+0.950**. Every run's verified claims are remembered; related runs recall them, and the gate
+re-verifies them before use. Embedding models run locally (about 130 MB, downloaded once).
 
 Reports and full traces are in [examples/](examples/README.md). To run with OpenAI only, set
 `POLYMATH_MODEL_PROFILE=openai` in `.env`. Set `POLYMATH_SPEND_CAP_USD` to cap total spend.
