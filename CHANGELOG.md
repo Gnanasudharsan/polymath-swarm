@@ -3,6 +3,21 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow SemVer.
 
+## [0.4.0] - 2026-11-05
+
+### Added
+- Literature, Compute, Formalizer, Critic and Synthesizer agents; Reasoner prompt v2.
+- Verification gate, typed evidence payloads, claims store, evidence report (Markdown + JSON).
+- Critique loop with bounded revision rounds; adaptive team selection; budget degradation.
+- Model profiles (`POLYMATH_MODEL_PROFILE`), spend ledger with hard cap.
+- End-to-end demos in `examples/`; ADR-0006.
+
+### Fixed
+- Spend of failed or timed-out tasks is charged to the run budget.
+- Synthesis runs even when some inputs failed.
+- Tests are isolated from local `.env` settings (LiteLLM loads `.env` on import).
+- Citation quotes match across different TeX typesetting; arXiv keyword queries are AND-ed.
+
 ## [0.3.0] - 2026-11-05
 
 ### Added

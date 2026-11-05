@@ -1,0 +1,185 @@
+{
+  "run_id": "run_14f7b830feec",
+  "problem": {
+    "id": "prob_ebb9ae76c472",
+    "statement": "Prove that for every natural number n, the product n * (n + 1) is even.",
+    "problem_type": "proof",
+    "context": "",
+    "created_at": "2026-11-05T19:49:50.130304Z"
+  },
+  "answer": "Yes — for every natural number n, the product n(n+1) is even [claim_e23b05fb0458].\n\nThis is the formalized and verified theorem: for all n : ℕ, n * (n + 1) is even [claim_e23b05fb0458].",
+  "verified": [
+    {
+      "claim": {
+        "id": "claim_e23b05fb0458",
+        "statement": "For every natural number n, the product n(n+1) is even.",
+        "confidence": 0.99,
+        "status": "verified",
+        "evidence": [
+          {
+            "id": "ev_0d999cb5df3c",
+            "kind": "critique",
+            "summary": "critic: accept",
+            "payload": {
+              "verdict": "accept",
+              "rationale": "The claim 'for every natural number n, n(n+1) is even' is correct. The standard parity argument covers all natural numbers including 0: if n is even then n(n+1) is even because it has factor 2; if n is odd then n+1 is even, so n(n+1) is even. No hidden assumptions or edge cases remain (natural numbers including 0 still satisfy the statement).",
+              "counterexample_code": null,
+              "counterexample_output": null,
+              "counterexample_found": false
+            },
+            "reproducible": false,
+            "source_agent": "critic",
+            "created_at": "2026-11-05T19:50:12.384362Z"
+          },
+          {
+            "id": "ev_6a4024571700",
+            "kind": "formal_proof",
+            "summary": "Lean 4 `forall_n_mul_succ_even`: proved, faithful",
+            "payload": {
+              "lean_code": "\n\ntheorem forall_n_mul_succ_even : ∀ n : ℕ, Even (n * (n + 1)) := by\n  intros; (expose_names; exact Nat.even_mul_succ_self n)",
+              "theorem_name": "forall_n_mul_succ_even",
+              "lean_verified": true,
+              "lean_reason": "compiles with no errors, no sorry, and only standard axioms",
+              "back_translation": "For every natural number n, the product n · (n + 1) is an even natural number (i.e., divisible by 2).",
+              "equivalent": true,
+              "equivalence_rationale": "Both statements universally quantify over natural numbers and assert that n*(n+1) is even (divisible by 2). The Lean theorem exactly matches the claim with no extra or missing hypotheses."
+            },
+            "reproducible": true,
+            "source_agent": "formalizer",
+            "created_at": "2026-11-05T19:51:08.717601Z"
+          }
+        ],
+        "proposed_by": "reasoner",
+        "task_id": "informal_proof",
+        "created_at": "2026-11-05T19:50:05.332945Z"
+      },
+      "decision": {
+        "claim_id": "claim_e23b05fb0458",
+        "status": "verified",
+        "checks": [
+          {
+            "evidence_id": "ev_0d999cb5df3c",
+            "kind": "critique",
+            "outcome": "inconclusive",
+            "detail": "critique (accept) without a runnable counterexample"
+          },
+          {
+            "evidence_id": "ev_6a4024571700",
+            "kind": "formal_proof",
+            "outcome": "supports",
+            "detail": "Lean re-verified `forall_n_mul_succ_even` (propext, Classical.choice, Quot.sound)"
+          }
+        ]
+      }
+    }
+  ],
+  "conjectures": [
+    {
+      "claim": {
+        "id": "claim_6af5de20c612",
+        "statement": "Every integer is either even or odd (i.e., for each integer m exactly one of the following holds: there exists k with m = 2k, or there exists k with m = 2k+1).",
+        "confidence": 0.99,
+        "status": "proposed",
+        "evidence": [
+          {
+            "id": "ev_4fd7cf39035d",
+            "kind": "critique",
+            "summary": "critic: accept",
+            "payload": {
+              "verdict": "accept",
+              "rationale": "The claim that every integer is either even or odd (i.e., ∀m ∈ Z, m = 2k or m = 2k+1 for some integer k, and these cases are exclusive) is a standard and correct characterization of integers by parity. One can prove it by division algorithm with divisor 2. No hidden assumption or counterexample exists.",
+              "counterexample_code": null,
+              "counterexample_output": null,
+              "counterexample_found": false
+            },
+            "reproducible": false,
+            "source_agent": "critic",
+            "created_at": "2026-11-05T19:50:12.384417Z"
+          }
+        ],
+        "proposed_by": "reasoner",
+        "task_id": "informal_proof",
+        "created_at": "2026-11-05T19:50:05.332960Z"
+      },
+      "decision": {
+        "claim_id": "claim_6af5de20c612",
+        "status": "proposed",
+        "checks": [
+          {
+            "evidence_id": "ev_4fd7cf39035d",
+            "kind": "critique",
+            "outcome": "inconclusive",
+            "detail": "critique (accept) without a runnable counterexample"
+          }
+        ]
+      }
+    },
+    {
+      "claim": {
+        "id": "claim_39125dcbe569",
+        "statement": "If n is even then n(n+1) is even; if n is odd then n+1 is even, hence n(n+1) is even.",
+        "confidence": 0.99,
+        "status": "proposed",
+        "evidence": [
+          {
+            "id": "ev_4895b2609084",
+            "kind": "critique",
+            "summary": "critic: accept",
+            "payload": {
+              "verdict": "accept",
+              "rationale": "The case analysis is correct and complete: if n is even then factor 2 divides n, so n(n+1) is even; if n is odd then n+1 is even, so their product is even. This directly establishes the desired result for all integers/natural numbers. The argument handles n=0 as the even case.",
+              "counterexample_code": null,
+              "counterexample_output": null,
+              "counterexample_found": false
+            },
+            "reproducible": false,
+            "source_agent": "critic",
+            "created_at": "2026-11-05T19:50:12.384444Z"
+          },
+          {
+            "id": "ev_5b13836b08d0",
+            "kind": "formal_proof",
+            "summary": "Lean 4 `even_mul_succ_of_parity_cases`: proved, NOT faithful",
+            "payload": {
+              "lean_code": "theorem even_mul_succ_of_parity_cases :\n    ∀ n : ℕ, (Even n → Even (n * (n + 1))) ∧ (Odd n → Even (n * (n + 1))) := by\n  intro n\n  constructor\n  · intro h\n    simpa using h.mul_right (n + 1)\n  · intro hodd\n    have hE : Even (n + 1) := hodd.add_one\n    simpa using hE.mul_left n",
+              "theorem_name": "even_mul_succ_of_parity_cases",
+              "lean_verified": true,
+              "lean_reason": "compiles with no errors, no sorry, and only standard axioms",
+              "back_translation": "For every natural number n, two implications hold: (1) if n is even, then n·(n + 1) is even; and (2) if n is odd, then n·(n + 1) is even.",
+              "equivalent": false,
+              "equivalence_rationale": "Both statements agree that for every natural n, if n is even then n(n+1) is even, and if n is odd then n(n+1) is even. However, Statement A also explicitly asserts the additional implication that if n is odd then n+1 is even. Statement B does not state this; it only concludes the product is even. Therefore B is weaker and they are not logically equivalent."
+            },
+            "reproducible": true,
+            "source_agent": "formalizer",
+            "created_at": "2026-11-05T19:50:54.811944Z"
+          }
+        ],
+        "proposed_by": "reasoner",
+        "task_id": "informal_proof",
+        "created_at": "2026-11-05T19:50:05.332970Z"
+      },
+      "decision": {
+        "claim_id": "claim_39125dcbe569",
+        "status": "proposed",
+        "checks": [
+          {
+            "evidence_id": "ev_4895b2609084",
+            "kind": "critique",
+            "outcome": "inconclusive",
+            "detail": "critique (accept) without a runnable counterexample"
+          },
+          {
+            "evidence_id": "ev_5b13836b08d0",
+            "kind": "formal_proof",
+            "outcome": "inconclusive",
+            "detail": "Lean statement not judged equivalent to the claim"
+          }
+        ]
+      }
+    }
+  ],
+  "refuted": [],
+  "usd": 0.06313975000000001,
+  "tokens": 15310,
+  "created_at": "2026-11-05T19:51:13.753087Z"
+}

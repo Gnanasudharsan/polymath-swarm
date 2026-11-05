@@ -71,6 +71,19 @@ def parse_arxiv_feed(xml: str) -> tuple[list[Paper], int | None]:
     return papers, total
 
 
+_ARXIV_SYNTAX = re.compile(r"\b(?:ti|au|abs|co|jr|cat|rn|id|all):|\b(?:AND|OR|ANDNOT)\b")
+_TERM = re.compile(r"[\w\-]+", re.UNICODE)
+
+
+def arxiv_query(query: str) -> str:
+    """Plain keywords → ``all:a AND all:b ...`` (arXiv ORs bare terms, which ranks poorly).
+    Queries already using arXiv field syntax are passed through."""
+    if _ARXIV_SYNTAX.search(query):
+        return query
+    terms = [t for t in _TERM.findall(query) if len(t) > 1]
+    return " AND ".join(f"all:{t}" for t in terms) or f"all:{query}"
+
+
 class ArxivClient:
     BASE = "https://export.arxiv.org/api/query"
 
@@ -78,7 +91,7 @@ class ArxivClient:
         self.http = http
 
     async def search(self, query: str, max_results: int = 10) -> PaperList:
-        params = {"search_query": f"all:{query}", "start": 0, "max_results": max_results}
+        params = {"search_query": arxiv_query(query), "start": 0, "max_results": max_results}
         papers, total = parse_arxiv_feed(await self.http.get(self.BASE, params, as_json=False))
         return PaperList(query=query, source="arxiv", papers=papers, total=total)
 

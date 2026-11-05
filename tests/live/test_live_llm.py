@@ -17,7 +17,12 @@ from polymath.core.models import RunBudget
 
 pytestmark = pytest.mark.live
 
-load_env_file()
+
+@pytest.fixture(autouse=True)
+def _load_local_env() -> None:
+    """Live tests use the local .env (provider profile, spend ledger + cap)."""
+    load_env_file()
+
 
 if os.environ.get("ANTHROPIC_API_KEY"):
     LIVE_MODEL: str | None = "claude-haiku-5-5"

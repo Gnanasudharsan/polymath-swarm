@@ -101,6 +101,16 @@ def test_normalise_arxiv_id(raw: str, expected: str) -> None:
     assert normalise_arxiv_id(raw) == expected
 
 
+def test_arxiv_query_ands_plain_keywords() -> None:
+    from polymath.mcp_servers.literature.sources import arxiv_query
+
+    assert arxiv_query("exponential improvement diagonal Ramsey") == (
+        "all:exponential AND all:improvement AND all:diagonal AND all:Ramsey"
+    )
+    assert arxiv_query("Erdős-Szekeres bound") == "all:Erdős-Szekeres AND all:bound"
+    assert arxiv_query("ti:Ramsey AND au:Campos") == "ti:Ramsey AND au:Campos"
+
+
 def test_normalise_arxiv_id_rejects_garbage() -> None:
     with pytest.raises(ValueError, match="arXiv"):
         normalise_arxiv_id("not-an-id")

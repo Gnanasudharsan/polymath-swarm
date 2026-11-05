@@ -9,7 +9,7 @@ computation, formal verification, critique, synthesis) collaborate through a sha
 Every claim in the final answer carries evidence: a verified citation, a reproduced computation,
 or a Lean 4 proof that compiles with zero `sorry`.
 
-> **Status:** early development — Phase 3 (orchestration) complete. See [PROGRESS.md](PROGRESS.md).
+> **Status:** early development — Phase 4 (specialists & verification) complete. See [PROGRESS.md](PROGRESS.md).
 
 ## Architecture
 
@@ -84,8 +84,20 @@ uv run polymath resume <run_id>
 uv run polymath trace <run_id> -o trace.json
 ```
 
-Use `--memory` to run without Postgres/Redis. Specialist agents arrive in Phase 4; until then
-every role is served by the Reasoner.
+Every run ends with an evidence report (`reports/<run_id>.md` and `.json`): the answer cites
+only claims that passed the verification gate, and everything else is listed as a conjecture or
+refuted. Use `--memory` to run without Postgres/Redis and `--no-tools` for a Reasoner-only dry run.
+
+### Demos
+
+| Problem | Verified by | Cost |
+|---|---|---|
+| n·(n+1) is even for all n ∈ ℕ | Lean 4 + Mathlib proof, back-translation judged faithful | $0.063 |
+| Sum of the first 100 primes (24133, prime) | sandbox computation, re-run by the gate | $0.011 |
+| 2023 exponential improvement for diagonal Ramsey numbers | verbatim quotes in re-fetched arXiv abstracts | $0.007 |
+
+Reports and full traces are in [examples/](examples/README.md). To run with OpenAI only, set
+`POLYMATH_MODEL_PROFILE=openai` in `.env`. Set `POLYMATH_SPEND_CAP_USD` to cap total spend.
 
 ### Tool servers (MCP)
 

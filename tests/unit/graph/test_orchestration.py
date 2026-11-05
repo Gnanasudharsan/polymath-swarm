@@ -64,17 +64,59 @@ async def test_max_parallel_caps_fan_out() -> None:
     assert time.monotonic() - started >= 0.6
 
 
-async def test_failed_task_skips_dependents() -> None:
+async def test_failed_task_skips_dependents_but_not_synthesis() -> None:
+    chain = TaskGraph.from_tasks(
+        [task("a"), task("a2", ["a"]), task("b"), task("synth", ["a2", "b"], TaskType.SYNTHESIS)]
+    )
     executor = FakeExecutor(fail={"a"})
-    runner, _ = _runner(FixedPlanner(diamond()), executor)
+    runner, _ = _runner(FixedPlanner(chain), executor)
     snap = await runner.start(PROBLEM)
     assert snap.status is RunStatus.COMPLETED
-    assert snap.values["results"]["a"].success is False
-    assert "exploded" in (snap.values["results"]["a"].error or "")
-    assert "synth" not in snap.values["results"]
+    results = snap.values["results"]
+    assert results["a"].success is False and "exploded" in (results["a"].error or "")
+    assert "a2" not in results  # ordinary dependents are skipped...
+    assert results["synth"].success  # ...but synthesis still reports on what happened
     plan = snap.values["plan"]
-    assert plan.tasks["synth"].status.value == "skipped"
-    assert snap.values["answer"].startswith("b done")
+    assert plan.tasks["a2"].status.value == "skipped"
+    assert snap.values["answer"].startswith("synth done")
+
+
+async def test_synthesis_skipped_when_every_input_failed() -> None:
+    runner, _ = _runner(FixedPlanner(diamond()), FakeExecutor(fail={"a", "b"}))
+    snap = await runner.start(PROBLEM)
+    assert "synth" not in snap.values["results"]
+    assert snap.status is RunStatus.FAILED
+
+
+async def test_spend_of_a_timed_out_task_is_charged_to_the_run(settings) -> None:  # type: ignore[no-untyped-def]
+    from polymath.agents.base import AgentContext, AgentResult
+    from polymath.core.models import AgentRole, Task
+    from polymath.llm.gateway import LLMGateway
+    from tests.conftest import FakeCompletion, no_sleep
+
+    gw = LLMGateway(settings, completion_fn=FakeCompletion(["x"] * 3), sleep=no_sleep)
+
+    class Slow:
+        async def run(self, task: Task, context: AgentContext) -> AgentResult:
+            await gw.complete(AgentRole.REASONER, [{"role": "user", "content": "q"}],
+                              model="claude-haiku-5-5")  # fmt: skip
+            await asyncio.sleep(30)
+            raise AssertionError("unreachable")
+
+    slow = Slow()
+    bb = Blackboard(InMemoryEventStore())
+    factory = make_factory(FixedPlanner(diamond()), FakeExecutor(), bb, task_timeout_s=0.2)
+
+    def ctx_factory(budget):  # type: ignore[no-untyped-def]
+        ctx = factory(budget)
+        ctx.executors[AgentRole.REASONER] = slow  # type: ignore[assignment]
+        return ctx
+
+    snap = await SwarmRunner(compile_graph(memory_checkpointer()), ctx_factory, bb).start(PROBLEM)
+    a = snap.values["results"]["a"]
+    assert not a.success and "exceeded" in (a.error or "")
+    assert a.usage and snap.values["usage"].tokens >= 150  # both a and b's calls counted
+    assert snap.values["usage"].usd > 0
 
 
 async def test_budget_exhaustion_stops_dispatch() -> None:

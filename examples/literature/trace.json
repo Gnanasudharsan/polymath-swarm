@@ -1,0 +1,1083 @@
+{
+  "run_id": "run_66e7852c00e5",
+  "status": "completed",
+  "stop_reason": "",
+  "problem": {
+    "id": "prob_2d672a69e719",
+    "statement": "In 2023 an exponential improvement over the Erdős-Szekeres upper bound for the diagonal Ramsey numbers R(k) was announced. Which paper proved it, and what form does the new upper bound take?",
+    "problem_type": "literature",
+    "context": "",
+    "created_at": "2026-11-05T19:55:11.794978Z"
+  },
+  "budget": {
+    "max_tokens": 600000,
+    "max_usd": 1.0,
+    "max_wall_clock_s": 1800.0,
+    "max_iterations": 30
+  },
+  "usage": {
+    "tokens": 8265,
+    "usd": 0.006665249999999999
+  },
+  "iterations": 2,
+  "elapsed_s": 22.841,
+  "plan": {
+    "tasks": {
+      "find_paper": {
+        "id": "find_paper",
+        "type": "literature_search",
+        "description": "Search arXiv, MathSciNet, Semantic Scholar, and major journals for 2023 papers announcing an exponential improvement to the Erdős–Szekeres (diagonal Ramsey) upper bound R(k). Identify the exact paper (authors, title, venue or arXiv identifier, and date), extract the stated theorem and precise form of the new upper bound (including constants/exponents or asymptotic expression), and produce a short file with the citation, the quoted theorem statement, and links to sources.",
+        "deps": [],
+        "assigned_role": "literature",
+        "status": "done",
+        "budget": {
+          "max_tokens": null,
+          "max_usd": null,
+          "max_wall_clock_s": null
+        },
+        "inputs": {}
+      },
+      "synth_answer": {
+        "id": "synth_answer",
+        "type": "synthesis",
+        "description": "Using the literature search output, produce the final concise answer: (1) the paper citation (authors, title, year, journal/arXiv link) that proved the 2023 exponential improvement, and (2) the exact form of the new upper bound for the diagonal Ramsey number R(k) as stated in the paper (give formula and brief explanation of notation), suitable for quoting in a short answer.",
+        "deps": [
+          "find_paper"
+        ],
+        "assigned_role": "synthesizer",
+        "status": "done",
+        "budget": {
+          "max_tokens": null,
+          "max_usd": null,
+          "max_wall_clock_s": null
+        },
+        "inputs": {}
+      }
+    }
+  },
+  "results": {
+    "find_paper": {
+      "task_id": "find_paper",
+      "role": "literature",
+      "output": "The supplied search results do not include the original 2023 paper by Campos, Griffiths, Morris and Sahasrabudhe (the CGMS breakthrough) itself, but two 2024 papers in the results (papers 1 and 6, which appear to be identical short papers) state that the CGMS breakthrough produced the first exponential improvement since 1935 and give an optimized explicit upper bound R(k,k) ≤ (3.8)^{k+o(k)}. I return findings extracted verbatim from those abstracts; the original 2023 CGMS paper identifier is not present in the provided results.\n\nTop sources:\n- Optimizing the CGMS upper bound on Ramsey numbers (2024) https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c\n- An Improved Upper Bound for Multicolour Ramsey Numbers (2026) https://www.semanticscholar.org/paper/5a43835ff2402f9c8e9e1546a5787090337fae43\n- New bounds for off-diagonal hypergraph Ramsey numbers (2026) https://www.semanticscholar.org/paper/56e90a14733afbedbcc04a7ef89f9295fb5e342e\n- Online Ramsey Numbers and the Subgraph Query Problem (2018) https://www.semanticscholar.org/paper/e77910e7957d33b2bb81b0dced7542bf39aadd17\n- Some Recent Results in Ramsey Theory (2026) https://www.semanticscholar.org/paper/ed8a96b92af6f4d92a4c638ae24ace0dbfcc423e",
+      "claims": [
+        {
+          "id": "claim_9c8cf83d7509",
+          "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) reports that Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement of the upper bound on the diagonal Ramsey numbers since 1935.",
+          "confidence": 0.9,
+          "status": "proposed",
+          "evidence": [
+            {
+              "id": "ev_bd50f4dc105e",
+              "kind": "citation",
+              "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+              "payload": {
+                "source": "arxiv",
+                "paper_id": "2407.19026",
+                "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                "url": "https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c",
+                "quote": "In a recent breakthrough Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement of the upper bound on the diagonal Ramsey numbers since 1935."
+              },
+              "reproducible": true,
+              "source_agent": "literature",
+              "created_at": "2026-11-05T19:55:35.691236Z"
+            }
+          ],
+          "proposed_by": "literature",
+          "task_id": "find_paper",
+          "created_at": "2026-11-05T19:55:35.691052Z"
+        },
+        {
+          "id": "claim_75605fea7b8f",
+          "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) states an optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.",
+          "confidence": 0.9,
+          "status": "proposed",
+          "evidence": [
+            {
+              "id": "ev_60a2bc17401d",
+              "kind": "citation",
+              "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+              "payload": {
+                "source": "arxiv",
+                "paper_id": "2407.19026",
+                "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                "url": "https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c",
+                "quote": "obtaining, in particular, an upper bound $$R(k,k) \\leq (3.8)^{k+o(k)}$$ on the diagonal Ramsey numbers."
+              },
+              "reproducible": true,
+              "source_agent": "literature",
+              "created_at": "2026-11-05T19:55:35.691352Z"
+            }
+          ],
+          "proposed_by": "literature",
+          "task_id": "find_paper",
+          "created_at": "2026-11-05T19:55:35.691268Z"
+        },
+        {
+          "id": "claim_262e13eeafa7",
+          "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) (duplicate listing) reiterates the same optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.",
+          "confidence": 0.9,
+          "status": "proposed",
+          "evidence": [
+            {
+              "id": "ev_351d2366fb90",
+              "kind": "citation",
+              "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+              "payload": {
+                "source": "arxiv",
+                "paper_id": "2407.19026",
+                "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                "url": "https://arxiv.org/abs/2407.19026",
+                "quote": "obtaining, in particular, an upper bound $$R(k,k) \\leq (3.8)^{k+o(k)}$$ on the diagonal Ramsey numbers."
+              },
+              "reproducible": true,
+              "source_agent": "literature",
+              "created_at": "2026-11-05T19:55:35.691449Z"
+            }
+          ],
+          "proposed_by": "literature",
+          "task_id": "find_paper",
+          "created_at": "2026-11-05T19:55:35.691375Z"
+        }
+      ],
+      "messages": [
+        {
+          "id": "msg_33ecc511980f",
+          "sender": "literature",
+          "recipient": null,
+          "task_id": "find_paper",
+          "content": "The supplied search results do not include the original 2023 paper by Campos, Griffiths, Morris and Sahasrabudhe (the CGMS breakthrough) itself, but two 2024 papers in the results (papers 1 and 6, which appear to be identical short papers) state that the CGMS breakthrough produced the first exponential improvement since 1935 and give an optimized explicit upper bound R(k,k) ≤ (3.8)^{k+o(k)}. I return findings extracted verbatim from those abstracts; the original 2023 CGMS paper identifier is not present in the provided results.\n\nTop sources:\n- Optimizing the CGMS upper bound on Ramsey numbers (2024) https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c\n- An Improved Upper Bound for Multicolour Ramsey Numbers (2026) https://www.semanticscholar.org/paper/5a43835ff2402f9c8e9e1546a5787090337fae43\n- New bounds for off-diagonal hypergraph Ramsey numbers (2026) https://www.semanticscholar.org/paper/56e90a14733afbedbcc04a7ef89f9295fb5e342e\n- Online Ramsey Numbers and the Subgraph Query Problem (2018) https://www.semanticscholar.org/paper/e77910e7957d33b2bb81b0dced7542bf39aadd17\n- Some Recent Results in Ramsey Theory (2026) https://www.semanticscholar.org/paper/ed8a96b92af6f4d92a4c638ae24ace0dbfcc423e",
+          "claims": [
+            {
+              "id": "claim_9c8cf83d7509",
+              "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) reports that Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement of the upper bound on the diagonal Ramsey numbers since 1935.",
+              "confidence": 0.9,
+              "status": "proposed",
+              "evidence": [
+                {
+                  "id": "ev_bd50f4dc105e",
+                  "kind": "citation",
+                  "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+                  "payload": {
+                    "source": "arxiv",
+                    "paper_id": "2407.19026",
+                    "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                    "url": "https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c",
+                    "quote": "In a recent breakthrough Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement of the upper bound on the diagonal Ramsey numbers since 1935."
+                  },
+                  "reproducible": true,
+                  "source_agent": "literature",
+                  "created_at": "2026-11-05T19:55:35.691236Z"
+                }
+              ],
+              "proposed_by": "literature",
+              "task_id": "find_paper",
+              "created_at": "2026-11-05T19:55:35.691052Z"
+            },
+            {
+              "id": "claim_75605fea7b8f",
+              "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) states an optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.",
+              "confidence": 0.9,
+              "status": "proposed",
+              "evidence": [
+                {
+                  "id": "ev_60a2bc17401d",
+                  "kind": "citation",
+                  "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+                  "payload": {
+                    "source": "arxiv",
+                    "paper_id": "2407.19026",
+                    "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                    "url": "https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c",
+                    "quote": "obtaining, in particular, an upper bound $$R(k,k) \\leq (3.8)^{k+o(k)}$$ on the diagonal Ramsey numbers."
+                  },
+                  "reproducible": true,
+                  "source_agent": "literature",
+                  "created_at": "2026-11-05T19:55:35.691352Z"
+                }
+              ],
+              "proposed_by": "literature",
+              "task_id": "find_paper",
+              "created_at": "2026-11-05T19:55:35.691268Z"
+            },
+            {
+              "id": "claim_262e13eeafa7",
+              "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) (duplicate listing) reiterates the same optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.",
+              "confidence": 0.9,
+              "status": "proposed",
+              "evidence": [
+                {
+                  "id": "ev_351d2366fb90",
+                  "kind": "citation",
+                  "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+                  "payload": {
+                    "source": "arxiv",
+                    "paper_id": "2407.19026",
+                    "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                    "url": "https://arxiv.org/abs/2407.19026",
+                    "quote": "obtaining, in particular, an upper bound $$R(k,k) \\leq (3.8)^{k+o(k)}$$ on the diagonal Ramsey numbers."
+                  },
+                  "reproducible": true,
+                  "source_agent": "literature",
+                  "created_at": "2026-11-05T19:55:35.691449Z"
+                }
+              ],
+              "proposed_by": "literature",
+              "task_id": "find_paper",
+              "created_at": "2026-11-05T19:55:35.691375Z"
+            }
+          ],
+          "created_at": "2026-11-05T19:55:35.691501Z"
+        }
+      ],
+      "usage": [
+        {
+          "model": "gpt-5-mini",
+          "role": "literature",
+          "prompt_tokens": 552,
+          "completion_tokens": 323,
+          "usd": 0.000784,
+          "latency_s": 3.830357707996882,
+          "timestamp": "2026-11-05T19:55:22.615859+00:00"
+        },
+        {
+          "model": "gpt-5-mini",
+          "role": "literature",
+          "prompt_tokens": 3164,
+          "completion_tokens": 1005,
+          "usd": 0.002801,
+          "latency_s": 10.104823708999902,
+          "timestamp": "2026-11-05T19:55:35.688766+00:00"
+        }
+      ],
+      "success": true,
+      "error": null,
+      "data": {}
+    },
+    "synth_answer": {
+      "task_id": "synth_answer",
+      "role": "synthesizer",
+      "output": "The 2023 exponential improvement was proved by Campos, Griffiths, Morris and Sahasrabudhe (the CGMS breakthrough) [claim_9c8cf83d7509].\n\nJustification: a report titled “Optimizing the CGMS upper bound on Ramsey numbers” states that Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement on the diagonal Ramsey numbers since 1935 [claim_9c8cf83d7509], and that the optimized explicit upper bound is R(k,k) ≤ (3.8)^{k+o(k)} [claim_75605fea7b8f, claim_262e13eeafa7].\n\nNote: the provided verified claims give the authors and the explicit bound but do not include the original CGMS paper citation or a formal explanation of the notation R(k,k) in the quoted material.",
+      "claims": [
+        {
+          "id": "claim_9c8cf83d7509",
+          "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) reports that Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement of the upper bound on the diagonal Ramsey numbers since 1935.",
+          "confidence": 0.9,
+          "status": "verified",
+          "evidence": [
+            {
+              "id": "ev_bd50f4dc105e",
+              "kind": "citation",
+              "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+              "payload": {
+                "source": "arxiv",
+                "paper_id": "2407.19026",
+                "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                "url": "https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c",
+                "quote": "In a recent breakthrough Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement of the upper bound on the diagonal Ramsey numbers since 1935."
+              },
+              "reproducible": true,
+              "source_agent": "literature",
+              "created_at": "2026-11-05T19:55:35.691236Z"
+            }
+          ],
+          "proposed_by": "literature",
+          "task_id": "find_paper",
+          "created_at": "2026-11-05T19:55:35.691052Z"
+        },
+        {
+          "id": "claim_75605fea7b8f",
+          "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) states an optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.",
+          "confidence": 0.9,
+          "status": "verified",
+          "evidence": [
+            {
+              "id": "ev_60a2bc17401d",
+              "kind": "citation",
+              "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+              "payload": {
+                "source": "arxiv",
+                "paper_id": "2407.19026",
+                "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                "url": "https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c",
+                "quote": "obtaining, in particular, an upper bound $$R(k,k) \\leq (3.8)^{k+o(k)}$$ on the diagonal Ramsey numbers."
+              },
+              "reproducible": true,
+              "source_agent": "literature",
+              "created_at": "2026-11-05T19:55:35.691352Z"
+            }
+          ],
+          "proposed_by": "literature",
+          "task_id": "find_paper",
+          "created_at": "2026-11-05T19:55:35.691268Z"
+        },
+        {
+          "id": "claim_262e13eeafa7",
+          "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) (duplicate listing) reiterates the same optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.",
+          "confidence": 0.9,
+          "status": "verified",
+          "evidence": [
+            {
+              "id": "ev_351d2366fb90",
+              "kind": "citation",
+              "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+              "payload": {
+                "source": "arxiv",
+                "paper_id": "2407.19026",
+                "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                "url": "https://arxiv.org/abs/2407.19026",
+                "quote": "obtaining, in particular, an upper bound $$R(k,k) \\leq (3.8)^{k+o(k)}$$ on the diagonal Ramsey numbers."
+              },
+              "reproducible": true,
+              "source_agent": "literature",
+              "created_at": "2026-11-05T19:55:35.691449Z"
+            }
+          ],
+          "proposed_by": "literature",
+          "task_id": "find_paper",
+          "created_at": "2026-11-05T19:55:35.691375Z"
+        }
+      ],
+      "messages": [
+        {
+          "id": "msg_127fc069dc32",
+          "sender": "synthesizer",
+          "recipient": null,
+          "task_id": "synth_answer",
+          "content": "The 2023 exponential improvement was proved by Campos, Griffiths, Morris and Sahasrabudhe (the CGMS breakthrough) [claim_9c8cf83d7509].\n\nJustification: a report titled “Optimizing the CGMS upper bound on Ramsey numbers” states that Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement on the diagonal Ramsey numbers since 1935 [claim_9c8cf83d7509], and that the optimized explicit upper bound is R(k,k) ≤ (3.8)^{k+o(k)} [claim_75605fea7b8f, claim_262e13eeafa7].\n\nNote: the provided verified claims give the authors and the explicit bound but do not include the original CGMS paper citation or a formal explanation of the notation R(k,k) in the quoted material.",
+          "claims": [
+            {
+              "id": "claim_9c8cf83d7509",
+              "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) reports that Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement of the upper bound on the diagonal Ramsey numbers since 1935.",
+              "confidence": 0.9,
+              "status": "verified",
+              "evidence": [
+                {
+                  "id": "ev_bd50f4dc105e",
+                  "kind": "citation",
+                  "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+                  "payload": {
+                    "source": "arxiv",
+                    "paper_id": "2407.19026",
+                    "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                    "url": "https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c",
+                    "quote": "In a recent breakthrough Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement of the upper bound on the diagonal Ramsey numbers since 1935."
+                  },
+                  "reproducible": true,
+                  "source_agent": "literature",
+                  "created_at": "2026-11-05T19:55:35.691236Z"
+                }
+              ],
+              "proposed_by": "literature",
+              "task_id": "find_paper",
+              "created_at": "2026-11-05T19:55:35.691052Z"
+            },
+            {
+              "id": "claim_75605fea7b8f",
+              "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) states an optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.",
+              "confidence": 0.9,
+              "status": "verified",
+              "evidence": [
+                {
+                  "id": "ev_60a2bc17401d",
+                  "kind": "citation",
+                  "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+                  "payload": {
+                    "source": "arxiv",
+                    "paper_id": "2407.19026",
+                    "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                    "url": "https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c",
+                    "quote": "obtaining, in particular, an upper bound $$R(k,k) \\leq (3.8)^{k+o(k)}$$ on the diagonal Ramsey numbers."
+                  },
+                  "reproducible": true,
+                  "source_agent": "literature",
+                  "created_at": "2026-11-05T19:55:35.691352Z"
+                }
+              ],
+              "proposed_by": "literature",
+              "task_id": "find_paper",
+              "created_at": "2026-11-05T19:55:35.691268Z"
+            },
+            {
+              "id": "claim_262e13eeafa7",
+              "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) (duplicate listing) reiterates the same optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.",
+              "confidence": 0.9,
+              "status": "verified",
+              "evidence": [
+                {
+                  "id": "ev_351d2366fb90",
+                  "kind": "citation",
+                  "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+                  "payload": {
+                    "source": "arxiv",
+                    "paper_id": "2407.19026",
+                    "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                    "url": "https://arxiv.org/abs/2407.19026",
+                    "quote": "obtaining, in particular, an upper bound $$R(k,k) \\leq (3.8)^{k+o(k)}$$ on the diagonal Ramsey numbers."
+                  },
+                  "reproducible": true,
+                  "source_agent": "literature",
+                  "created_at": "2026-11-05T19:55:35.691449Z"
+                }
+              ],
+              "proposed_by": "literature",
+              "task_id": "find_paper",
+              "created_at": "2026-11-05T19:55:35.691375Z"
+            }
+          ],
+          "created_at": "2026-11-05T19:55:41.606893Z"
+        }
+      ],
+      "usage": [
+        {
+          "model": "gpt-5-mini",
+          "role": "synthesizer",
+          "prompt_tokens": 1031,
+          "completion_tokens": 583,
+          "usd": 0.0014237499999999999,
+          "latency_s": 5.874285707999661,
+          "timestamp": "2026-11-05T19:55:41.604620+00:00"
+        }
+      ],
+      "success": true,
+      "error": null,
+      "data": {
+        "report": {
+          "run_id": null,
+          "problem": {
+            "id": "prob_2d672a69e719",
+            "statement": "In 2023 an exponential improvement over the Erdős-Szekeres upper bound for the diagonal Ramsey numbers R(k) was announced. Which paper proved it, and what form does the new upper bound take?",
+            "problem_type": "literature",
+            "context": "",
+            "created_at": "2026-11-05T19:55:11.794978Z"
+          },
+          "answer": "The 2023 exponential improvement was proved by Campos, Griffiths, Morris and Sahasrabudhe (the CGMS breakthrough) [claim_9c8cf83d7509].\n\nJustification: a report titled “Optimizing the CGMS upper bound on Ramsey numbers” states that Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement on the diagonal Ramsey numbers since 1935 [claim_9c8cf83d7509], and that the optimized explicit upper bound is R(k,k) ≤ (3.8)^{k+o(k)} [claim_75605fea7b8f, claim_262e13eeafa7].\n\nNote: the provided verified claims give the authors and the explicit bound but do not include the original CGMS paper citation or a formal explanation of the notation R(k,k) in the quoted material.",
+          "verified": [
+            {
+              "claim": {
+                "id": "claim_9c8cf83d7509",
+                "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) reports that Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement of the upper bound on the diagonal Ramsey numbers since 1935.",
+                "confidence": 0.9,
+                "status": "verified",
+                "evidence": [
+                  {
+                    "id": "ev_bd50f4dc105e",
+                    "kind": "citation",
+                    "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+                    "payload": {
+                      "source": "arxiv",
+                      "paper_id": "2407.19026",
+                      "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                      "url": "https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c",
+                      "quote": "In a recent breakthrough Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement of the upper bound on the diagonal Ramsey numbers since 1935."
+                    },
+                    "reproducible": true,
+                    "source_agent": "literature",
+                    "created_at": "2026-11-05T19:55:35.691236Z"
+                  }
+                ],
+                "proposed_by": "literature",
+                "task_id": "find_paper",
+                "created_at": "2026-11-05T19:55:35.691052Z"
+              },
+              "decision": {
+                "claim_id": "claim_9c8cf83d7509",
+                "status": "verified",
+                "checks": [
+                  {
+                    "evidence_id": "ev_bd50f4dc105e",
+                    "kind": "citation",
+                    "outcome": "supports",
+                    "detail": "quote found in arxiv:2407.19026 (Optimizing the CGMS upper bound on Ramsey numbers)"
+                  }
+                ]
+              }
+            },
+            {
+              "claim": {
+                "id": "claim_75605fea7b8f",
+                "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) states an optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.",
+                "confidence": 0.9,
+                "status": "verified",
+                "evidence": [
+                  {
+                    "id": "ev_60a2bc17401d",
+                    "kind": "citation",
+                    "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+                    "payload": {
+                      "source": "arxiv",
+                      "paper_id": "2407.19026",
+                      "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                      "url": "https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c",
+                      "quote": "obtaining, in particular, an upper bound $$R(k,k) \\leq (3.8)^{k+o(k)}$$ on the diagonal Ramsey numbers."
+                    },
+                    "reproducible": true,
+                    "source_agent": "literature",
+                    "created_at": "2026-11-05T19:55:35.691352Z"
+                  }
+                ],
+                "proposed_by": "literature",
+                "task_id": "find_paper",
+                "created_at": "2026-11-05T19:55:35.691268Z"
+              },
+              "decision": {
+                "claim_id": "claim_75605fea7b8f",
+                "status": "verified",
+                "checks": [
+                  {
+                    "evidence_id": "ev_60a2bc17401d",
+                    "kind": "citation",
+                    "outcome": "supports",
+                    "detail": "quote found in arxiv:2407.19026 (Optimizing the CGMS upper bound on Ramsey numbers)"
+                  }
+                ]
+              }
+            },
+            {
+              "claim": {
+                "id": "claim_262e13eeafa7",
+                "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) (duplicate listing) reiterates the same optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.",
+                "confidence": 0.9,
+                "status": "verified",
+                "evidence": [
+                  {
+                    "id": "ev_351d2366fb90",
+                    "kind": "citation",
+                    "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+                    "payload": {
+                      "source": "arxiv",
+                      "paper_id": "2407.19026",
+                      "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                      "url": "https://arxiv.org/abs/2407.19026",
+                      "quote": "obtaining, in particular, an upper bound $$R(k,k) \\leq (3.8)^{k+o(k)}$$ on the diagonal Ramsey numbers."
+                    },
+                    "reproducible": true,
+                    "source_agent": "literature",
+                    "created_at": "2026-11-05T19:55:35.691449Z"
+                  }
+                ],
+                "proposed_by": "literature",
+                "task_id": "find_paper",
+                "created_at": "2026-11-05T19:55:35.691375Z"
+              },
+              "decision": {
+                "claim_id": "claim_262e13eeafa7",
+                "status": "verified",
+                "checks": [
+                  {
+                    "evidence_id": "ev_351d2366fb90",
+                    "kind": "citation",
+                    "outcome": "supports",
+                    "detail": "quote found in arxiv:2407.19026 (Optimizing the CGMS upper bound on Ramsey numbers)"
+                  }
+                ]
+              }
+            }
+          ],
+          "conjectures": [],
+          "refuted": [],
+          "usd": 0.0,
+          "tokens": 0,
+          "created_at": "2026-11-05T19:55:41.606634Z"
+        },
+        "markdown": "# Polymath Swarm — evidence report\n\n**Problem.** In 2023 an exponential improvement over the Erdős-Szekeres upper bound for the diagonal Ramsey numbers R(k) was announced. Which paper proved it, and what form does the new upper bound take?\n\n## Answer\n\nThe 2023 exponential improvement was proved by Campos, Griffiths, Morris and Sahasrabudhe (the CGMS breakthrough) [claim_9c8cf83d7509].\n\nJustification: a report titled “Optimizing the CGMS upper bound on Ramsey numbers” states that Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement on the diagonal Ramsey numbers since 1935 [claim_9c8cf83d7509], and that the optimized explicit upper bound is R(k,k) ≤ (3.8)^{k+o(k)} [claim_75605fea7b8f, claim_262e13eeafa7].\n\nNote: the provided verified claims give the authors and the explicit bound but do not include the original CGMS paper citation or a formal explanation of the notation R(k,k) in the quoted material.\n\n## Verified claims (3)\n\n- `claim_9c8cf83d7509` Optimizing the CGMS upper bound on Ramsey numbers (2024) reports that Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement of the upper bound on the diagonal Ramsey numbers since 1935.\n  - 📚 citation: Optimizing the CGMS upper bound on Ramsey numbers (2024) — gate: **supports** (quote found in arxiv:2407.19026 (Optimizing the CGMS upper bound on Ramsey numbers))\n- `claim_75605fea7b8f` Optimizing the CGMS upper bound on Ramsey numbers (2024) states an optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.\n  - 📚 citation: Optimizing the CGMS upper bound on Ramsey numbers (2024) — gate: **supports** (quote found in arxiv:2407.19026 (Optimizing the CGMS upper bound on Ramsey numbers))\n- `claim_262e13eeafa7` Optimizing the CGMS upper bound on Ramsey numbers (2024) (duplicate listing) reiterates the same optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.\n  - 📚 citation: Optimizing the CGMS upper bound on Ramsey numbers (2024) — gate: **supports** (quote found in arxiv:2407.19026 (Optimizing the CGMS upper bound on Ramsey numbers))\n\n## Conjectures — not verified (0)\n\n\n---\nRun `-` · 0 tokens · $0.0000 · verified-claim rate 100%\n"
+      }
+    }
+  },
+  "claims": [
+    {
+      "id": "claim_9c8cf83d7509",
+      "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) reports that Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement of the upper bound on the diagonal Ramsey numbers since 1935.",
+      "confidence": 0.9,
+      "status": "proposed",
+      "evidence": [
+        {
+          "id": "ev_bd50f4dc105e",
+          "kind": "citation",
+          "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+          "payload": {
+            "source": "arxiv",
+            "paper_id": "2407.19026",
+            "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+            "url": "https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c",
+            "quote": "In a recent breakthrough Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement of the upper bound on the diagonal Ramsey numbers since 1935."
+          },
+          "reproducible": true,
+          "source_agent": "literature",
+          "created_at": "2026-11-05T19:55:35.691236Z"
+        }
+      ],
+      "proposed_by": "literature",
+      "task_id": "find_paper",
+      "created_at": "2026-11-05T19:55:35.691052Z"
+    },
+    {
+      "id": "claim_75605fea7b8f",
+      "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) states an optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.",
+      "confidence": 0.9,
+      "status": "proposed",
+      "evidence": [
+        {
+          "id": "ev_60a2bc17401d",
+          "kind": "citation",
+          "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+          "payload": {
+            "source": "arxiv",
+            "paper_id": "2407.19026",
+            "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+            "url": "https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c",
+            "quote": "obtaining, in particular, an upper bound $$R(k,k) \\leq (3.8)^{k+o(k)}$$ on the diagonal Ramsey numbers."
+          },
+          "reproducible": true,
+          "source_agent": "literature",
+          "created_at": "2026-11-05T19:55:35.691352Z"
+        }
+      ],
+      "proposed_by": "literature",
+      "task_id": "find_paper",
+      "created_at": "2026-11-05T19:55:35.691268Z"
+    },
+    {
+      "id": "claim_262e13eeafa7",
+      "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) (duplicate listing) reiterates the same optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.",
+      "confidence": 0.9,
+      "status": "proposed",
+      "evidence": [
+        {
+          "id": "ev_351d2366fb90",
+          "kind": "citation",
+          "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+          "payload": {
+            "source": "arxiv",
+            "paper_id": "2407.19026",
+            "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+            "url": "https://arxiv.org/abs/2407.19026",
+            "quote": "obtaining, in particular, an upper bound $$R(k,k) \\leq (3.8)^{k+o(k)}$$ on the diagonal Ramsey numbers."
+          },
+          "reproducible": true,
+          "source_agent": "literature",
+          "created_at": "2026-11-05T19:55:35.691449Z"
+        }
+      ],
+      "proposed_by": "literature",
+      "task_id": "find_paper",
+      "created_at": "2026-11-05T19:55:35.691375Z"
+    },
+    {
+      "id": "claim_9c8cf83d7509",
+      "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) reports that Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement of the upper bound on the diagonal Ramsey numbers since 1935.",
+      "confidence": 0.9,
+      "status": "verified",
+      "evidence": [
+        {
+          "id": "ev_bd50f4dc105e",
+          "kind": "citation",
+          "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+          "payload": {
+            "source": "arxiv",
+            "paper_id": "2407.19026",
+            "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+            "url": "https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c",
+            "quote": "In a recent breakthrough Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement of the upper bound on the diagonal Ramsey numbers since 1935."
+          },
+          "reproducible": true,
+          "source_agent": "literature",
+          "created_at": "2026-11-05T19:55:35.691236Z"
+        }
+      ],
+      "proposed_by": "literature",
+      "task_id": "find_paper",
+      "created_at": "2026-11-05T19:55:35.691052Z"
+    },
+    {
+      "id": "claim_75605fea7b8f",
+      "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) states an optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.",
+      "confidence": 0.9,
+      "status": "verified",
+      "evidence": [
+        {
+          "id": "ev_60a2bc17401d",
+          "kind": "citation",
+          "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+          "payload": {
+            "source": "arxiv",
+            "paper_id": "2407.19026",
+            "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+            "url": "https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c",
+            "quote": "obtaining, in particular, an upper bound $$R(k,k) \\leq (3.8)^{k+o(k)}$$ on the diagonal Ramsey numbers."
+          },
+          "reproducible": true,
+          "source_agent": "literature",
+          "created_at": "2026-11-05T19:55:35.691352Z"
+        }
+      ],
+      "proposed_by": "literature",
+      "task_id": "find_paper",
+      "created_at": "2026-11-05T19:55:35.691268Z"
+    },
+    {
+      "id": "claim_262e13eeafa7",
+      "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) (duplicate listing) reiterates the same optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.",
+      "confidence": 0.9,
+      "status": "verified",
+      "evidence": [
+        {
+          "id": "ev_351d2366fb90",
+          "kind": "citation",
+          "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+          "payload": {
+            "source": "arxiv",
+            "paper_id": "2407.19026",
+            "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+            "url": "https://arxiv.org/abs/2407.19026",
+            "quote": "obtaining, in particular, an upper bound $$R(k,k) \\leq (3.8)^{k+o(k)}$$ on the diagonal Ramsey numbers."
+          },
+          "reproducible": true,
+          "source_agent": "literature",
+          "created_at": "2026-11-05T19:55:35.691449Z"
+        }
+      ],
+      "proposed_by": "literature",
+      "task_id": "find_paper",
+      "created_at": "2026-11-05T19:55:35.691375Z"
+    }
+  ],
+  "answer": "The 2023 exponential improvement was proved by Campos, Griffiths, Morris and Sahasrabudhe (the CGMS breakthrough) [claim_9c8cf83d7509].\n\nJustification: a report titled “Optimizing the CGMS upper bound on Ramsey numbers” states that Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement on the diagonal Ramsey numbers since 1935 [claim_9c8cf83d7509], and that the optimized explicit upper bound is R(k,k) ≤ (3.8)^{k+o(k)} [claim_75605fea7b8f, claim_262e13eeafa7].\n\nNote: the provided verified claims give the authors and the explicit bound but do not include the original CGMS paper citation or a formal explanation of the notation R(k,k) in the quoted material.",
+  "pending_interrupt": null,
+  "checkpoints": 10,
+  "events": [
+    {
+      "id": "evt_269a10c0924d",
+      "run_id": "run_66e7852c00e5",
+      "kind": "run_started",
+      "payload": {
+        "budget": {
+          "max_usd": 1.0,
+          "max_tokens": 600000,
+          "max_iterations": 30,
+          "max_wall_clock_s": 1800.0
+        },
+        "problem": {
+          "id": "prob_2d672a69e719",
+          "context": "",
+          "statement": "In 2023 an exponential improvement over the Erdős-Szekeres upper bound for the diagonal Ramsey numbers R(k) was announced. Which paper proved it, and what form does the new upper bound take?",
+          "created_at": "2026-11-05T19:55:11.794978Z",
+          "problem_type": null
+        }
+      },
+      "created_at": "2026-11-05T19:55:11.794996Z"
+    },
+    {
+      "id": "evt_2a13472fb4dd",
+      "run_id": "run_66e7852c00e5",
+      "kind": "plan_created",
+      "payload": {
+        "plan": {
+          "tasks": {
+            "find_paper": {
+              "id": "find_paper",
+              "deps": [],
+              "type": "literature_search",
+              "budget": {
+                "max_usd": null,
+                "max_tokens": null,
+                "max_wall_clock_s": null
+              },
+              "inputs": {},
+              "status": "pending",
+              "description": "Search arXiv, MathSciNet, Semantic Scholar, and major journals for 2023 papers announcing an exponential improvement to the Erdős–Szekeres (diagonal Ramsey) upper bound R(k). Identify the exact paper (authors, title, venue or arXiv identifier, and date), extract the stated theorem and precise form of the new upper bound (including constants/exponents or asymptotic expression), and produce a short file with the citation, the quoted theorem statement, and links to sources.",
+              "assigned_role": "literature"
+            },
+            "synth_answer": {
+              "id": "synth_answer",
+              "deps": [
+                "find_paper"
+              ],
+              "type": "synthesis",
+              "budget": {
+                "max_usd": null,
+                "max_tokens": null,
+                "max_wall_clock_s": null
+              },
+              "inputs": {},
+              "status": "pending",
+              "description": "Using the literature search output, produce the final concise answer: (1) the paper citation (authors, title, year, journal/arXiv link) that proved the 2023 exponential improvement, and (2) the exact form of the new upper bound for the diagonal Ramsey number R(k) as stated in the paper (give formula and brief explanation of notation), suitable for quoting in a short answer.",
+              "assigned_role": "synthesizer"
+            }
+          }
+        },
+        "round": 1,
+        "problem_type": "literature"
+      },
+      "created_at": "2026-11-05T19:55:18.767235Z"
+    },
+    {
+      "id": "evt_ebd6d483aebb",
+      "run_id": "run_66e7852c00e5",
+      "kind": "task_started",
+      "payload": {
+        "role": "literature",
+        "task_id": "find_paper"
+      },
+      "created_at": "2026-11-05T19:55:18.781574Z"
+    },
+    {
+      "id": "evt_dd58e6e7029d",
+      "run_id": "run_66e7852c00e5",
+      "kind": "claim_proposed",
+      "payload": {
+        "claim": {
+          "id": "claim_9c8cf83d7509",
+          "status": "proposed",
+          "task_id": "find_paper",
+          "evidence": [
+            {
+              "id": "ev_bd50f4dc105e",
+              "kind": "citation",
+              "payload": {
+                "url": "https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c",
+                "quote": "In a recent breakthrough Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement of the upper bound on the diagonal Ramsey numbers since 1935.",
+                "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                "source": "arxiv",
+                "paper_id": "2407.19026"
+              },
+              "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+              "created_at": "2026-11-05T19:55:35.691236Z",
+              "reproducible": true,
+              "source_agent": "literature"
+            }
+          ],
+          "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) reports that Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement of the upper bound on the diagonal Ramsey numbers since 1935.",
+          "confidence": 0.9,
+          "created_at": "2026-11-05T19:55:35.691052Z",
+          "proposed_by": "literature"
+        },
+        "task_id": "find_paper"
+      },
+      "created_at": "2026-11-05T19:55:35.691669Z"
+    },
+    {
+      "id": "evt_c07a01354c35",
+      "run_id": "run_66e7852c00e5",
+      "kind": "claim_proposed",
+      "payload": {
+        "claim": {
+          "id": "claim_75605fea7b8f",
+          "status": "proposed",
+          "task_id": "find_paper",
+          "evidence": [
+            {
+              "id": "ev_60a2bc17401d",
+              "kind": "citation",
+              "payload": {
+                "url": "https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c",
+                "quote": "obtaining, in particular, an upper bound $$R(k,k) \\leq (3.8)^{k+o(k)}$$ on the diagonal Ramsey numbers.",
+                "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                "source": "arxiv",
+                "paper_id": "2407.19026"
+              },
+              "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+              "created_at": "2026-11-05T19:55:35.691352Z",
+              "reproducible": true,
+              "source_agent": "literature"
+            }
+          ],
+          "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) states an optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.",
+          "confidence": 0.9,
+          "created_at": "2026-11-05T19:55:35.691268Z",
+          "proposed_by": "literature"
+        },
+        "task_id": "find_paper"
+      },
+      "created_at": "2026-11-05T19:55:35.696544Z"
+    },
+    {
+      "id": "evt_dd16311af732",
+      "run_id": "run_66e7852c00e5",
+      "kind": "claim_proposed",
+      "payload": {
+        "claim": {
+          "id": "claim_262e13eeafa7",
+          "status": "proposed",
+          "task_id": "find_paper",
+          "evidence": [
+            {
+              "id": "ev_351d2366fb90",
+              "kind": "citation",
+              "payload": {
+                "url": "https://arxiv.org/abs/2407.19026",
+                "quote": "obtaining, in particular, an upper bound $$R(k,k) \\leq (3.8)^{k+o(k)}$$ on the diagonal Ramsey numbers.",
+                "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                "source": "arxiv",
+                "paper_id": "2407.19026"
+              },
+              "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+              "created_at": "2026-11-05T19:55:35.691449Z",
+              "reproducible": true,
+              "source_agent": "literature"
+            }
+          ],
+          "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) (duplicate listing) reiterates the same optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.",
+          "confidence": 0.9,
+          "created_at": "2026-11-05T19:55:35.691375Z",
+          "proposed_by": "literature"
+        },
+        "task_id": "find_paper"
+      },
+      "created_at": "2026-11-05T19:55:35.699750Z"
+    },
+    {
+      "id": "evt_3292949bcdfd",
+      "run_id": "run_66e7852c00e5",
+      "kind": "task_finished",
+      "payload": {
+        "usd": 0.003585,
+        "role": "literature",
+        "error": null,
+        "success": true,
+        "task_id": "find_paper",
+        "output_preview": "The supplied search results do not include the original 2023 paper by Campos, Griffiths, Morris and Sahasrabudhe (the CGMS breakthrough) itself, but two 2024 papers in the results (papers 1 and 6, which appear to be identical short papers) state that the CGMS breakthrough produced the first exponential improvement since 1935 and give an optimized explicit upper bound R(k,k) ≤ (3.8)^{k+o(k)}. I return findings extracted verbatim from those abstracts; the original 2023 CGMS paper identifier is not"
+      },
+      "created_at": "2026-11-05T19:55:35.701825Z"
+    },
+    {
+      "id": "evt_0c9c02a591a5",
+      "run_id": "run_66e7852c00e5",
+      "kind": "task_started",
+      "payload": {
+        "role": "synthesizer",
+        "task_id": "synth_answer"
+      },
+      "created_at": "2026-11-05T19:55:35.709485Z"
+    },
+    {
+      "id": "evt_12b0c9e77d70",
+      "run_id": "run_66e7852c00e5",
+      "kind": "claim_proposed",
+      "payload": {
+        "claim": {
+          "id": "claim_9c8cf83d7509",
+          "status": "verified",
+          "task_id": "find_paper",
+          "evidence": [
+            {
+              "id": "ev_bd50f4dc105e",
+              "kind": "citation",
+              "payload": {
+                "url": "https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c",
+                "quote": "In a recent breakthrough Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement of the upper bound on the diagonal Ramsey numbers since 1935.",
+                "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                "source": "arxiv",
+                "paper_id": "2407.19026"
+              },
+              "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+              "created_at": "2026-11-05T19:55:35.691236Z",
+              "reproducible": true,
+              "source_agent": "literature"
+            }
+          ],
+          "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) reports that Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement of the upper bound on the diagonal Ramsey numbers since 1935.",
+          "confidence": 0.9,
+          "created_at": "2026-11-05T19:55:35.691052Z",
+          "proposed_by": "literature"
+        },
+        "task_id": "synth_answer"
+      },
+      "created_at": "2026-11-05T19:55:41.606991Z"
+    },
+    {
+      "id": "evt_0028a5d39d65",
+      "run_id": "run_66e7852c00e5",
+      "kind": "claim_proposed",
+      "payload": {
+        "claim": {
+          "id": "claim_75605fea7b8f",
+          "status": "verified",
+          "task_id": "find_paper",
+          "evidence": [
+            {
+              "id": "ev_60a2bc17401d",
+              "kind": "citation",
+              "payload": {
+                "url": "https://www.semanticscholar.org/paper/f1fdb70d2e7a23a6d99d77a808835e3d0259ad0c",
+                "quote": "obtaining, in particular, an upper bound $$R(k,k) \\leq (3.8)^{k+o(k)}$$ on the diagonal Ramsey numbers.",
+                "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                "source": "arxiv",
+                "paper_id": "2407.19026"
+              },
+              "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+              "created_at": "2026-11-05T19:55:35.691352Z",
+              "reproducible": true,
+              "source_agent": "literature"
+            }
+          ],
+          "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) states an optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.",
+          "confidence": 0.9,
+          "created_at": "2026-11-05T19:55:35.691268Z",
+          "proposed_by": "literature"
+        },
+        "task_id": "synth_answer"
+      },
+      "created_at": "2026-11-05T19:55:41.611494Z"
+    },
+    {
+      "id": "evt_57dd1d522033",
+      "run_id": "run_66e7852c00e5",
+      "kind": "claim_proposed",
+      "payload": {
+        "claim": {
+          "id": "claim_262e13eeafa7",
+          "status": "verified",
+          "task_id": "find_paper",
+          "evidence": [
+            {
+              "id": "ev_351d2366fb90",
+              "kind": "citation",
+              "payload": {
+                "url": "https://arxiv.org/abs/2407.19026",
+                "quote": "obtaining, in particular, an upper bound $$R(k,k) \\leq (3.8)^{k+o(k)}$$ on the diagonal Ramsey numbers.",
+                "title": "Optimizing the CGMS upper bound on Ramsey numbers",
+                "source": "arxiv",
+                "paper_id": "2407.19026"
+              },
+              "summary": "Optimizing the CGMS upper bound on Ramsey numbers (2024)",
+              "created_at": "2026-11-05T19:55:35.691449Z",
+              "reproducible": true,
+              "source_agent": "literature"
+            }
+          ],
+          "statement": "Optimizing the CGMS upper bound on Ramsey numbers (2024) (duplicate listing) reiterates the same optimized explicit upper bound on the diagonal Ramsey numbers: R(k,k) ≤ (3.8)^{k+o(k)}.",
+          "confidence": 0.9,
+          "created_at": "2026-11-05T19:55:35.691375Z",
+          "proposed_by": "literature"
+        },
+        "task_id": "synth_answer"
+      },
+      "created_at": "2026-11-05T19:55:41.614248Z"
+    },
+    {
+      "id": "evt_dcad2ce4dd14",
+      "run_id": "run_66e7852c00e5",
+      "kind": "task_finished",
+      "payload": {
+        "usd": 0.0014237499999999999,
+        "role": "synthesizer",
+        "error": null,
+        "success": true,
+        "task_id": "synth_answer",
+        "output_preview": "The 2023 exponential improvement was proved by Campos, Griffiths, Morris and Sahasrabudhe (the CGMS breakthrough) [claim_9c8cf83d7509].\n\nJustification: a report titled “Optimizing the CGMS upper bound on Ramsey numbers” states that Campos, Griffiths, Morris and Sahasrabudhe obtained the first exponential improvement on the diagonal Ramsey numbers since 1935 [claim_9c8cf83d7509], and that the optimized explicit upper bound is R(k,k) ≤ (3.8)^{k+o(k)} [claim_75605fea7b8f, claim_262e13eeafa7].\n\nNote"
+      },
+      "created_at": "2026-11-05T19:55:41.616907Z"
+    },
+    {
+      "id": "evt_2a90692a8ac1",
+      "run_id": "run_66e7852c00e5",
+      "kind": "run_finished",
+      "payload": {
+        "status": "completed",
+        "stop_reason": ""
+      },
+      "created_at": "2026-11-05T19:55:41.623803Z"
+    }
+  ]
+}

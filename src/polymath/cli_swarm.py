@@ -11,7 +11,8 @@ from typing import Annotated, Any
 
 import typer
 
-from polymath.agents.registry import default_executors
+from polymath.agents.registry import default_executors, specialists
+from polymath.agents.tools import Tools, open_tools
 from polymath.blackboard import Blackboard
 from polymath.core.budget import BudgetTracker
 from polymath.core.config import Settings, get_settings, load_env_file
@@ -31,27 +32,54 @@ MemoryOpt = Annotated[
 ]
 
 
-def context_factory(settings: Settings, blackboard: Blackboard) -> ContextFactory:
+NoToolsOpt = Annotated[
+    bool, typer.Option("--no-tools", help="Reasoner-only, no tool servers (nothing verifies).")
+]
+
+
+def context_factory(
+    settings: Settings, blackboard: Blackboard, tools: Tools | None
+) -> ContextFactory:
     def make(budget: BudgetTracker) -> RunContext:
         gateway = LLMGateway(settings, budget=budget)
+        executors = specialists(gateway, tools) if tools else default_executors(gateway)
         return RunContext(
-            planner=LLMPlanner(gateway),
-            executors=default_executors(gateway),
-            blackboard=blackboard,
-            budget=budget,
+            planner=LLMPlanner(gateway), executors=executors, blackboard=blackboard, budget=budget
         )
 
     return make
 
 
 @asynccontextmanager
-async def open_runner(settings: Settings, *, in_memory: bool) -> AsyncIterator[SwarmRunner]:
+async def open_runner(
+    settings: Settings, *, in_memory: bool, with_tools: bool = True
+) -> AsyncIterator[SwarmRunner]:
     async with swarm_infra(settings, in_memory=in_memory) as infra:
-        yield SwarmRunner(
-            compile_graph(infra.checkpointer),
-            context_factory(settings, infra.blackboard),
-            infra.blackboard,
-        )
+        if not with_tools:
+            yield SwarmRunner(
+                compile_graph(infra.checkpointer),
+                context_factory(settings, infra.blackboard, None),
+                infra.blackboard,
+            )
+            return
+        async with open_tools(settings) as tools:
+            yield SwarmRunner(
+                compile_graph(infra.checkpointer),
+                context_factory(settings, infra.blackboard, tools),
+                infra.blackboard,
+            )
+
+
+def write_report(snap: RunSnapshot, directory: Path) -> list[Path]:
+    """Write ``<run_id>.md`` and ``<run_id>.json`` if the run produced an evidence report."""
+    v = snap.values
+    if not v.get("report"):
+        return []
+    directory.mkdir(parents=True, exist_ok=True)
+    md, js = directory / f"{snap.run_id}.md", directory / f"{snap.run_id}.json"
+    md.write_text(v.get("report_markdown", ""), encoding="utf-8")
+    js.write_text(json.dumps(v["report"], indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return [md, js]
 
 
 def _setup() -> Settings:
@@ -91,7 +119,9 @@ def _print_result(snap: RunSnapshot) -> None:
     if "plan" in v:
         for tid, status in task_outcomes(v["plan"], v.get("results") or {}).items():
             typer.echo(f"  {status.value:>8}  {tid}")
-    if v.get("answer"):
+    if v.get("report_markdown"):
+        typer.echo("\n" + v["report_markdown"])
+    elif v.get("answer"):
         typer.secho("\nAnswer", bold=True)
         typer.echo(v["answer"])
     usage = v.get("usage")
@@ -119,13 +149,19 @@ def register(app: typer.Typer) -> None:
         max_usd: Annotated[float, typer.Option(help="Hard USD ceiling for the run.")] = 2.0,
         run_id: Annotated[str | None, typer.Option(help="Explicit run id.")] = None,
         in_memory: MemoryOpt = False,
+        no_tools: NoToolsOpt = False,
+        report_dir: Annotated[
+            Path, typer.Option(help="Where to write the evidence report (.md + .json).")
+        ] = Path("reports"),
     ) -> None:
         """Plan and run the swarm on a problem (resumable by run id)."""
         settings = _setup()
         budget = settings.budget.model_copy(update={"max_usd": max_usd})
 
         async def go() -> RunSnapshot:
-            async with open_runner(settings, in_memory=in_memory) as runner:
+            async with open_runner(
+                settings, in_memory=in_memory, with_tools=not no_tools
+            ) as runner:
                 snap = await runner.start(
                     Problem(statement=problem),
                     budget=budget,
@@ -136,7 +172,10 @@ def register(app: typer.Typer) -> None:
                 return await _drive(runner, snap, interactive=True)
 
         try:
-            _print_result(asyncio.run(go()))
+            snap = asyncio.run(go())
+            _print_result(snap)
+            for path in write_report(snap, report_dir):
+                typer.secho(f"report: {path}", fg=typer.colors.BRIGHT_BLACK)
         finally:
             shutdown_tracing()
 

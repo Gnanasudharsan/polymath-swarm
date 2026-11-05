@@ -12,8 +12,9 @@ from langgraph.types import Command, Send, interrupt
 from polymath.agents.base import AgentContext, AgentResult
 from polymath.core.budget import BudgetExceededError
 from polymath.core.logging import get_logger
-from polymath.core.models import EventKind, Problem, Task, TaskStatus, TaskType
+from polymath.core.models import Claim, EventKind, Problem, Task, TaskStatus, TaskType
 from polymath.graph.context import RunContext
+from polymath.graph.revision import add_revision_round, is_optional, triggering_claims
 from polymath.graph.state import (
     RunStatus,
     SwarmState,
@@ -22,6 +23,8 @@ from polymath.graph.state import (
     task_outcomes,
 )
 from polymath.llm.cost import LLMUsage
+from polymath.llm.usage_scope import usage_scope
+from polymath.verification.report import EvidenceReport, render_markdown
 
 log = get_logger(__name__)
 
@@ -39,6 +42,7 @@ class TaskInput(TypedDict):
     problem: Problem
     task: Task
     deps: dict[str, AgentResult]
+    claims: list[Claim]
 
 
 def _usage(records: list[LLMUsage]) -> Usage:
@@ -133,17 +137,51 @@ async def dispatch(state: SwarmState, runtime: Runtime[RunContext]) -> dict[str,
     ctx.budget.restore(
         tokens_used=usage.tokens, usd_used=usage.usd, iterations=iterations, elapsed_s=elapsed
     )
-    if not ready_task_ids(state["plan"], state.get("results") or {}):
-        return {"elapsed_s": elapsed, "status": RunStatus.COMPLETED}
+    update: dict[str, Any] = {"elapsed_s": elapsed}
+    plan, results = state["plan"], dict(state.get("results") or {})
+
+    # Critique loop: refuted/challenged claims before synthesis → insert a revision round.
+    handled = set(state.get("handled_claims") or [])
+    trigger = triggering_claims(state.get("claims") or {}, handled)
+    rounds = state.get("revision_rounds", 0)
+    if trigger and rounds < ctx.max_revision_rounds:
+        revised = add_revision_round(plan, results, trigger, rounds + 1)
+        if revised is not None:
+            plan = revised
+            update |= {
+                "plan": plan,
+                "revision_rounds": rounds + 1,
+                "handled_claims": sorted(handled | {c.id for c in trigger}),
+            }
+            await ctx.blackboard.post(
+                state["run_id"], EventKind.MESSAGE, topic="revision_round", round=rounds + 1,
+                claims=[c.id for c in trigger], plan=plan.model_dump(mode="json"),
+            )  # fmt: skip
+
+    ready = ready_task_ids(plan, results)
+    if not ready:
+        return update | {"status": RunStatus.COMPLETED}
     try:
         ctx.budget.check()
     except BudgetExceededError as exc:
-        return {"elapsed_s": elapsed, "status": RunStatus.BUDGET_EXHAUSTED, "stop_reason": str(exc)}
+        return update | {"status": RunStatus.BUDGET_EXHAUSTED, "stop_reason": str(exc)}
     if ctx.budget.is_near_limit():
         await ctx.blackboard.post(
             state["run_id"], EventKind.BUDGET_WARNING, **ctx.budget.snapshot()
         )
-    return {"elapsed_s": elapsed, "iterations": iterations + 1, "status": RunStatus.EXECUTING}
+        # Degrade gracefully: drop optional work (extra critique rounds) near the ceiling.
+        skipped = {
+            tid: AgentResult(
+                task_id=tid,
+                role=plan.tasks[tid].assigned_role,
+                output="(skipped: run budget nearly exhausted)",
+            )
+            for tid in ready
+            if is_optional(plan.tasks[tid])
+        }
+        if skipped:
+            update["results"] = skipped
+    return update | {"iterations": iterations + 1, "status": RunStatus.EXECUTING}
 
 
 def route(state: SwarmState, runtime: Runtime[RunContext]) -> list[Send] | str:
@@ -160,7 +198,9 @@ def route(state: SwarmState, runtime: Runtime[RunContext]) -> list[Send] | str:
                 run_id=state["run_id"],
                 problem=state["problem"],
                 task=state["plan"].tasks[tid],
-                deps={d: results[d] for d in state["plan"].tasks[tid].deps},
+                # skipped inputs have no result; synthesis may still run without them
+                deps={d: results[d] for d in state["plan"].tasks[tid].deps if d in results},
+                claims=list((state.get("claims") or {}).values()),
             ),
         )
         for tid in ready
@@ -175,18 +215,25 @@ async def execute_task(payload: TaskInput, runtime: Runtime[RunContext]) -> dict
     deps = payload["deps"]
     agent_ctx = AgentContext(
         problem=payload["problem"],
-        claims=[c for r in deps.values() for c in r.claims],
+        claims=payload["claims"],
         messages=[m for r in deps.values() for m in r.messages],
         notes="\n\n".join(f"### Output of `{tid}`\n{r.output}" for tid, r in deps.items()),
     )
-    try:
-        executor = ctx.executor_for(task.assigned_role)
-        result = await asyncio.wait_for(executor.run(task, agent_ctx), ctx.task_timeout_s)
-    except (TimeoutError, BudgetExceededError, LookupError) as exc:
-        result = _failed(task, f"{type(exc).__name__}: {exc}")
-    except Exception as exc:
-        log.exception("graph.task_failed", run_id=run_id, task_id=task.id)
-        result = _failed(task, f"{type(exc).__name__}: {exc}")
+    timeout = ctx.timeout_for(task)
+    with usage_scope() as spent:
+        try:
+            executor = ctx.executor_for(task.assigned_role)
+            result = await asyncio.wait_for(executor.run(task, agent_ctx), timeout)
+        except TimeoutError:
+            result = _failed(task, f"TimeoutError: task exceeded {timeout:g}s")
+        except (BudgetExceededError, LookupError) as exc:
+            result = _failed(task, f"{type(exc).__name__}: {exc}")
+        except Exception as exc:
+            log.exception("graph.task_failed", run_id=run_id, task_id=task.id)
+            result = _failed(task, f"{type(exc).__name__}: {exc}")
+    if spent:
+        # The gateway saw every call, including those of a task that failed or timed out.
+        result = result.model_copy(update={"usage": list(spent)})
 
     for claim in result.claims:
         await ctx.blackboard.post(
@@ -202,7 +249,11 @@ async def execute_task(payload: TaskInput, runtime: Runtime[RunContext]) -> dict
         usd=result.usd,
         output_preview=result.output[:500],
     )
-    return {"results": {task.id: result}, "usage": _usage(result.usage)}
+    return {
+        "results": {task.id: result},
+        "claims": {c.id: c for c in result.claims},
+        "usage": _usage(result.usage),
+    }
 
 
 def _failed(task: Task, error: str) -> AgentResult:
@@ -223,6 +274,9 @@ async def finalize(state: SwarmState, runtime: Runtime[RunContext]) -> dict[str,
             plan.tasks[tid].status = task_status
         update["plan"] = plan
         update["answer"] = _answer(plan.tasks.values(), results)
+        report = _report(state, plan.tasks.values(), results)
+        if report is not None:
+            update["report"], update["report_markdown"] = report
         if status is RunStatus.COMPLETED and not any(r.success for r in results.values()):
             status = RunStatus.FAILED
             update["stop_reason"] = "no task succeeded"
@@ -234,6 +288,21 @@ async def finalize(state: SwarmState, runtime: Runtime[RunContext]) -> dict[str,
         stop_reason=update.get("stop_reason", state.get("stop_reason", "")),
     )
     return update
+
+
+def _report(
+    state: SwarmState, tasks: Any, results: dict[str, AgentResult]
+) -> tuple[dict[str, Any], str] | None:
+    """The synthesiser's evidence report, stamped with run id and final cost."""
+    for task in tasks:
+        r = results.get(task.id)
+        if task.type is TaskType.SYNTHESIS and r and r.success and "report" in r.data:
+            usage = state.get("usage") or Usage()
+            report = EvidenceReport.model_validate(r.data["report"]).model_copy(
+                update={"run_id": state["run_id"], "usd": usage.usd, "tokens": usage.tokens}
+            )
+            return report.model_dump(mode="json"), render_markdown(report)
+    return None
 
 
 def _answer(tasks: Any, results: dict[str, AgentResult]) -> str:

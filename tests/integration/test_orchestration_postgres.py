@@ -19,7 +19,8 @@ from tests.swarm_fakes import FakeExecutor, FixedPlanner, diamond, make_factory,
 
 pytestmark = pytest.mark.integration
 
-SETTINGS = Settings(_env_file=None)  # type: ignore[call-arg]
+# Only datastore URLs are used here (no LLM, no ledger), so import-time settings are safe.
+SETTINGS = Settings(_env_file=None, spend_ledger=None)  # type: ignore[call-arg]
 
 
 async def _wait_for(predicate, limit_s: float = 60.0) -> None:  # type: ignore[no-untyped-def]

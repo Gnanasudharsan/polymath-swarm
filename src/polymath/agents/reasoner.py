@@ -25,7 +25,7 @@ class ReasonerOutput(BaseModel):
 
     reasoning: str = Field(description="Step-by-step argument.")
     answer: str = Field(description="Concise direct answer to the problem.")
-    claims: list[ProposedClaim] = Field(default_factory=list)
+    claims: list[ProposedClaim] = Field(default_factory=list, max_length=8)
 
 
 class ReasonerAgent(BaseAgent):
