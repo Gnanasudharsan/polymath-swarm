@@ -51,6 +51,48 @@ flowchart TD
 | API | `polymath.api` | FastAPI, SSE run streaming, API-key auth | 7 |
 | Frontend | `frontend/` | Next.js + React Flow live task graph, claim panel, cost meter | 7 |
 
+## Orchestration graph (LangGraph)
+
+Generated from the code with `uv run polymath graph` (see ADR-0005):
+
+```mermaid
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	plan(plan)
+	approve(approve)
+	dispatch(dispatch)
+	execute_task(execute_task)
+	finalize(finalize)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> plan;
+	approve -.-> dispatch;
+	approve -.-> finalize;
+	approve -.-> plan;
+	dispatch -.-> execute_task;
+	dispatch -.-> finalize;
+	execute_task --> dispatch;
+	plan -.-> approve;
+	plan -.-> finalize;
+	finalize --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
+```
+
+- `plan` — Supervisor/Planner turns the problem into a validated task DAG.
+- `approve` — optional human-in-the-loop `interrupt()`; feedback triggers a replan.
+- `dispatch` — syncs the budget from the checkpoint, stops when exhausted or done.
+- `execute_task` — one parallel branch per ready task (`Send`), each running a specialist.
+- `finalize` — final task statuses, answer, `run_finished` event.
+
+Runs are checkpointed in Postgres after every step (`run_id` = thread id), so
+`polymath resume <run_id>` continues after a pause, crash or `kill -9`.
+
 ## Claim lifecycle
 
 ```mermaid

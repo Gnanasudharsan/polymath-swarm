@@ -1,5 +1,24 @@
 # Progress
 
+## Phase 3 — Orchestration (2026-11-05)
+
+**Shipped**
+- LangGraph `StateGraph`: plan → approve → dispatch ⇄ execute_task (parallel `Send` fan-out) → finalize
+- Supervisor/Planner (LLM → validated task DAG with repair loop and safe fallback plan)
+- Router with dependency-aware readiness, failure propagation (skip dependents), `max_parallel`
+- Postgres checkpointer (msgpack allowlist); resumable runs by `run_id`, including after `kill -9`
+- Human-in-the-loop plan approval via `interrupt()`; feedback → replan
+- Budget-aware termination (tokens/USD/active wall-clock/iterations) with near-limit warnings
+- Blackboard: Postgres event history + Redis pub/sub live stream
+- Run trace export (JSON); CLI `solve`, `resume`, `trace`, `graph`; Mermaid diagram in docs; ADR-0005
+
+**Metrics**: 130 unit tests, 26 integration tests (19 in CI, plus 7 lean/network) — all passing.
+Concurrency: two 0.5 s tasks finish in < 0.9 s with overlapping execution. SIGKILL test: a run killed
+while task `b` was in flight resumed in a new process; `a` ran once, `b` restarted, run completed.
+
+**Known gaps**: every role still runs the Reasoner (specialists arrive in Phase 4); waves are barriers
+(a task ready mid-wave waits for the wave).
+
 ## Phase 2 — MCP tool layer (2026-11-05)
 
 **Shipped**
