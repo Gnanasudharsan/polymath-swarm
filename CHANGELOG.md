@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow SemVer.
 
+## [0.2.0] - 2026-11-05
+
+### Added
+- MCP client adapter `MCPToolbox`.
+- MCP servers: `sympy`, `sandbox` (locked-down Docker), `literature` (arXiv, Semantic Scholar, OpenAlex with Redis cache
+  and rate limiting), `lean` (Lean 4 + Mathlib via a persistent REPL).
+- Sandbox and Lean Docker images; compose `tools` profile; on-demand Lean CI workflow.
+- ADR-0003, ADR-0004.
+
 ## [0.1.0] - 2026-11-04
 
 ### Added

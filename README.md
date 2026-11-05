@@ -9,7 +9,7 @@ computation, formal verification, critique, synthesis) collaborate through a sha
 Every claim in the final answer carries evidence: a verified citation, a reproduced computation,
 or a Lean 4 proof that compiles with zero `sorry`.
 
-> **Status:** early development — Phase 1 (core runtime & LLM gateway) complete. See [PROGRESS.md](PROGRESS.md).
+> **Status:** early development — Phase 2 (MCP tool layer) complete. See [PROGRESS.md](PROGRESS.md).
 
 ## Architecture
 
@@ -66,6 +66,27 @@ to cap spend, `--json` for machine-readable output). Claims it prints are *propo
 verification pipeline arrives in later phases.
 
 Postgres is exposed on host port **5544** and Redis on **6379**.
+
+### Tool servers (MCP)
+
+Build the tool images once (the Lean + Mathlib image is large, about 15 GB):
+
+```bash
+docker compose --profile tools build
+```
+
+Each server speaks MCP over stdio and works with any MCP client:
+
+| Server | Command | Tools |
+|---|---|---|
+| SymPy | `uv run python -m polymath.mcp_servers.sympy` | simplify, solve, integrate, series, verify_identity |
+| Sandbox | `uv run python -m polymath.mcp_servers.sandbox` | run_python (no network, read-only FS, resource caps) |
+| Literature | `uv run python -m polymath.mcp_servers.literature` | arXiv, Semantic Scholar, OpenAlex search and lookup |
+| Lean | `uv run python -m polymath.mcp_servers.lean` | check, get_goals, count_sorry, verify_proof |
+
+```bash
+uv run pytest -m integration -q
+```
 
 ## Roadmap
 

@@ -77,7 +77,20 @@ Every run carries a `RunBudget` (max USD, tokens, wall-clock, iterations). The s
 remaining budget before dispatching; near the ceiling it drops optional critics and routes to cheaper
 models, and at the ceiling it terminates and synthesizes with whatever has been verified.
 
+## Tool layer (MCP)
+
+| Server | Module | Tools | Isolation |
+|---|---|---|---|
+| `sympy` | `mcp_servers/sympy` | `simplify`, `solve`, `integrate`, `series`, `verify_identity` | input screen + killable child process |
+| `sandbox` | `mcp_servers/sandbox` | `run_python` | throwaway Docker container: no network, read-only FS, mem/CPU/PID caps, uid 65534 |
+| `literature` | `mcp_servers/literature` | `arxiv_search`, `arxiv_fetch`, `semantic_scholar_search`, `semantic_scholar_citations`, `openalex_search`, `openalex_lookup` | Redis cache + shared rate limiter |
+| `lean` | `mcp_servers/lean` | `check`, `get_goals`, `count_sorry`, `verify_proof` | persistent network-less REPL container with Mathlib loaded once |
+
+Agents reach tools through `MCPToolbox` (`mcp_servers/client.py`), which mounts several servers,
+namespaces tools as `server.tool`, and exports LiteLLM function schemas. See ADR-0003 and ADR-0004.
+
 ## Infrastructure (dev)
 
 `docker compose up -d --wait` starts Postgres 16 + pgvector (host port 5544) and Redis 7 (6379).
-Langfuse, the sandbox image, the Lean image and the API are added in later phases.
+`docker compose --profile tools build` builds the sandbox image and the Lean + Mathlib image
+(~15 GB). Langfuse and the API are added in later phases.

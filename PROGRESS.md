@@ -1,5 +1,23 @@
 # Progress
 
+## Phase 2 — MCP tool layer (2026-11-05)
+
+**Shipped**
+- `MCPToolbox` client adapter: mounts in-process or stdio MCP servers, namespaced tools, LiteLLM tool schemas, traced calls
+- `sympy` server: simplify / solve / integrate / series / verify_identity, with an input screen and killable child processes
+- `sandbox` server: Python in a throwaway container (no network, read-only FS, memory/CPU/PID caps, dropped caps, uid 65534, host-side kill)
+- `literature` server: arXiv, Semantic Scholar (search + citations), OpenAlex (search + lookup), Redis cache + shared rate limiter, 429 retries
+- `lean` server: Lean 4 + Mathlib v4.35.0 image with the community REPL; check / get_goals / count_sorry / verify_proof
+- Compose `tools` profile builds both images; CI builds the sandbox and runs its escape tests; `lean.yml` on demand
+- ADR-0003 (tool layer + sandbox), ADR-0004 (Lean via persistent REPL)
+
+**Metrics**: 102 unit tests; 23 integration tests (all passing locally). Sandbox escapes blocked: network, writes outside
+/tmp, root uid, infinite loop, 1 GB allocation, fork bomb. Lean: Mathlib load ≈55 s once, then ≈0.1 s per check;
+known-good proof verified, wrong proof, `sorry`, and `axiom cheat : False` all rejected.
+
+**Known gaps**: Lean tests are not part of PR CI (image ≈15 GB); one REPL serialises checks (pool later if needed);
+Semantic Scholar live test skips when the IP is throttled and no API key is set.
+
 ## Phase 1 — Core runtime & LLM gateway (2026-11-04)
 
 **Shipped**
