@@ -35,6 +35,20 @@ class CheckPlan(BaseModel):
     checks: list[Check] = Field(min_length=1, max_length=5)
 
 
+class Exploration(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    program: str = Field(min_length=1, description="prints POLYMATH_VALUE: name = value lines")
+
+
+_IMPERATIVE = ("compute ", "determine ", "find ", "calculate ", "evaluate ", "show ", "prove ")
+
+
+def is_assertion(statement: str) -> bool:
+    """Reject 'claims' that merely restate the task as an instruction."""
+    return not statement.strip().lower().startswith(_IMPERATIVE)
+
+
 class FixedProgram(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -54,12 +68,19 @@ class ComputeAgent(BaseAgent):
         usage: list[LLMUsage] = []
         candidates = open_claims(context)
         brief = f"{task_brief(task, context)}\n\n## Open claims\n{render_claims(candidates)}"
-        plan = await self.ask(CheckPlan, brief, usage)
+        # Explore first, then assert: claims are stated from computed values, not guessed.
+        explored = await self._explore(task, context, usage)
+        plan = await self.ask(
+            CheckPlan, f"{brief}\n\n## Computed values\n{explored}", usage, prompt="compute"
+        )
         by_id = {c.id: c for c in context.claims}
 
         claims: list[Claim] = []
         lines: list[str] = []
         for check in plan.checks:
+            if check.claim_id is None and not is_assertion(check.statement):
+                lines.append(f"- dropped non-assertion: {check.statement}")
+                continue
             program, res = check.program, None
             for attempt in range(self.max_fixes + 1):
                 try:
@@ -93,4 +114,17 @@ class ComputeAgent(BaseAgent):
             )
             claims.append(claim.with_evidence(evidence))
             lines.append(f"- [{outcome}] {check.statement}")
-        return self.result(task, "Computational checks:\n" + "\n".join(lines), usage, claims=claims)
+        output = f"Computed values:\n{explored}\n\nComputational checks:\n" + "\n".join(lines)
+        return self.result(task, output, usage, claims=claims)
+
+    async def _explore(self, task: Task, context: AgentContext, usage: list[LLMUsage]) -> str:
+        explore = await self.ask(
+            Exploration, task_brief(task, context), usage, prompt="compute_explore"
+        )
+        try:
+            res = await self.toolset.run_python(explore.program, 60.0)
+        except ToolCallError as exc:
+            return f"(exploration failed: {exc})"
+        values = [ln for ln in res.stdout.splitlines() if ln.startswith("POLYMATH_VALUE:")]
+        body = "\n".join(values) or res.stdout[-3000:]
+        return body if res.exit_code == 0 else f"{body}\n(stderr: {res.stderr[-1500:]})"

@@ -17,8 +17,9 @@ from polymath.agents.base import (
     render_claims,
     task_brief,
 )
+from polymath.agents.lean_auto import automate
 from polymath.agents.tools import ToolCallError, Tools
-from polymath.core.models import AgentRole, Claim, Task
+from polymath.core.models import AgentRole, Claim, Evidence, Task
 from polymath.llm.cost import LLMUsage
 from polymath.llm.gateway import LLMGateway
 from polymath.mcp_servers.lean.checker import LeanVerification
@@ -44,6 +45,13 @@ class BackTranslation(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     statement: str
+
+
+class ClaimMatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    claim_id: str | None
+    rationale: str
 
 
 class Equivalence(BaseModel):
@@ -91,14 +99,14 @@ class FormalizerAgent(BaseAgent):
         by_id = {c.id: c for c in candidates}
         picked = [by_id[cid] for cid in dict.fromkeys(chosen.claim_ids) if cid in by_id]
         # LLM rounds run concurrently; the Lean REPL serialises the checks themselves.
-        done = await asyncio.gather(*(self._formalize(c, brief, usage) for c in picked))
-        claims = [c for c, _ in done]
-        notes = [n for _, n in done]
+        done = await asyncio.gather(*(self._formalize(c, candidates, brief, usage) for c in picked))
+        claims = [c for pair in done for c in pair[0]]
+        notes = [pair[1] for pair in done]
         return self.result(task, "Formalization:\n" + "\n".join(notes), usage, claims=claims)
 
     async def _formalize(
-        self, claim: Claim, brief: str, usage: list[LLMUsage]
-    ) -> tuple[Claim, str]:
+        self, claim: Claim, candidates: list[Claim], brief: str, usage: list[LLMUsage]
+    ) -> tuple[list[Claim], str]:
         history: list[dict[str, str]] = []
         request = f"{brief}\n\n## Claim to formalize\n{claim.statement}"
         attempt: LeanAttempt | None = None
@@ -117,6 +125,13 @@ class FormalizerAgent(BaseAgent):
                 else:
                     if verification.verified:
                         break
+                    # Cheap rescue before another model round: Mathlib automation.
+                    auto = await automate(self.toolset, attempt.lean_code, name)
+                    if auto is not None:
+                        attempt = LeanAttempt(theorem_name=name, lean_code=auto)
+                        verification = await self.toolset.lean_verify(auto, name)
+                        if verification.verified:
+                            break
                     feedback = f"Lean did not accept the proof ({verification.reason}):\n" + (
                         diagnostics_text(verification)
                     )
@@ -126,7 +141,7 @@ class FormalizerAgent(BaseAgent):
             ]
             request = f"{feedback}\n\nFix the Lean file. Keep the statement faithful to the claim."
         if attempt is None:
-            return claim, f"- {claim.statement}: no attempt"
+            return [claim], f"- {claim.statement}: no attempt"
 
         statement = theorem_statement(attempt.lean_code, attempt.theorem_name)
         back = await self.ask(BackTranslation, f"```lean\n{statement}\n```", usage,
@@ -139,19 +154,41 @@ class FormalizerAgent(BaseAgent):
             prompt="equivalence",
         )
         verified = bool(verification and verification.verified)
-        payload = FormalProofPayload(
-            lean_code=attempt.lean_code,
-            theorem_name=attempt.theorem_name,
-            lean_verified=verified,
-            lean_reason=verification.reason if verification else "not checked",
-            back_translation=back.statement,
-            equivalent=judge.equivalent,
-            equivalence_rationale=judge.rationale,
+
+        def evidence_for(equivalent: bool, rationale: str) -> Evidence:
+            payload = FormalProofPayload(
+                lean_code=attempt.lean_code,
+                theorem_name=attempt.theorem_name,
+                lean_verified=verified,
+                lean_reason=verification.reason if verification else "not checked",
+                back_translation=back.statement,
+                equivalent=equivalent,
+                equivalence_rationale=rationale,
+            )
+            status = "proved" if verified else "not proved"
+            faithful = "faithful" if equivalent else "NOT faithful"
+            return make_evidence(
+                payload, summary=f"Lean 4 `{attempt.theorem_name}`: {status}, {faithful}",
+                source=self.role,
+            )  # fmt: skip
+
+        out = [claim.with_evidence(evidence_for(judge.equivalent, judge.rationale))]
+        note = f"- {claim.statement}: {'proved' if verified else 'not proved'}, " + (
+            "faithful" if judge.equivalent else "NOT faithful"
         )
-        status = "proved" if verified else "not proved"
-        faithful = "faithful" if judge.equivalent else "NOT faithful"
-        evidence = make_evidence(
-            payload, summary=f"Lean 4 `{attempt.theorem_name}`: {status}, {faithful}",
-            source=self.role,
-        )  # fmt: skip
-        return claim.with_evidence(evidence), f"- {claim.statement}: {status}, {faithful}"
+        if verified and not judge.equivalent:
+            # The proof may establish a *different* open claim: attach it there instead.
+            others = [c for c in candidates if c.id != claim.id]
+            if others:
+                match = await self.ask(
+                    ClaimMatch,
+                    f"## Proved statement\n{back.statement}\n\n```lean\n{statement}\n```\n\n"
+                    f"## Claims\n{render_claims(others)}",
+                    usage,
+                    prompt="claim_match",
+                )
+                target = next((c for c in others if c.id == match.claim_id), None)
+                if target is not None:
+                    out.append(target.with_evidence(evidence_for(True, match.rationale)))
+                    note += f"; matches `{target.id}` instead"
+        return out, note

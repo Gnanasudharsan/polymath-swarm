@@ -49,7 +49,10 @@ def _evidence_lines(rc: ReportedClaim) -> list[str]:
     checks = {c.evidence_id: c for c in rc.decision.checks}
     for e in rc.claim.evidence:
         check = checks.get(e.id)
-        status = f" — gate: **{check.outcome}** ({check.detail})" if check else ""
+        if e.kind.value == "critique" and check and check.outcome != "refutes":
+            status = ""  # reviews are opinions; only reproduced counterexamples affect the gate
+        else:
+            status = f" — gate: **{check.outcome}** ({check.detail})" if check else ""
         lines.append(f"  - {_BADGE.get(e.kind.value, e.kind.value)}: {e.summary}{status}")
     return lines or ["  - (no evidence)"]
 
