@@ -25,6 +25,7 @@ from polymath.core.logging import get_logger
 from polymath.core.models import AgentRole
 from polymath.core.tracing import get_tracer
 from polymath.llm.cost import CostTracker, LLMUsage
+from polymath.llm.ledger import SpendLedger
 
 log = get_logger(__name__)
 
@@ -69,6 +70,11 @@ class LLMGateway:
         self.budget = budget
         self._completion_fn = completion_fn
         self._sleep = sleep
+        self.ledger = (
+            SpendLedger(settings.spend_ledger, settings.spend_cap_usd)
+            if settings.spend_ledger
+            else None
+        )
 
     def model_chain(self, role: AgentRole, override: str | None = None) -> list[str]:
         """Ordered, de-duplicated list of models to try for ``role``."""
@@ -90,6 +96,8 @@ class LLMGateway:
     ) -> LLMResponse:
         if self.budget is not None:
             self.budget.check()
+        if self.ledger is not None:
+            self.ledger.check()
 
         errors: list[str] = []
         tracer = get_tracer()
@@ -148,6 +156,8 @@ class LLMGateway:
             kwargs["temperature"] = temperature
         if response_format is not None:
             kwargs["response_format"] = response_format
+        if self.settings.reasoning_effort:
+            kwargs["reasoning_effort"] = self.settings.reasoning_effort
 
         attempts = self.settings.llm_max_retries + 1
         for attempt in range(attempts):
@@ -184,6 +194,8 @@ class LLMGateway:
         )
         if self.budget is not None:
             self.budget.record(tokens=record.total_tokens, usd=record.usd)
+        if self.ledger is not None:
+            self.ledger.append(record)
         log.info(
             "llm.call",
             role=role.value,
