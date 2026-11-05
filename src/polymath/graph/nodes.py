@@ -148,7 +148,8 @@ async def dispatch(state: SwarmState, runtime: Runtime[RunContext]) -> dict[str,
 
 def route(state: SwarmState, runtime: Runtime[RunContext]) -> list[Send] | str:
     """Fan out every ready task in parallel (up to ``max_parallel``), or finish."""
-    if state.get("status") is not RunStatus.EXECUTING:
+    # Compare by value: top-level enum fields come back from Postgres as plain strings.
+    if state.get("status") != RunStatus.EXECUTING:
         return FINALIZE
     results = state.get("results") or {}
     ready = ready_task_ids(state["plan"], results)[: runtime.context.max_parallel]
@@ -212,7 +213,7 @@ def _failed(task: Task, error: str) -> AgentResult:
 
 async def finalize(state: SwarmState, runtime: Runtime[RunContext]) -> dict[str, Any]:
     ctx, run_id = runtime.context, state["run_id"]
-    status = state.get("status", RunStatus.COMPLETED)
+    status = RunStatus(state.get("status", RunStatus.COMPLETED))
     update: dict[str, Any] = {}
     if "plan" in state:
         results = state.get("results") or {}

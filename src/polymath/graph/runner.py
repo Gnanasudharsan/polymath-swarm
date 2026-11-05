@@ -100,7 +100,7 @@ class SwarmRunner:
         interrupt = snap.interrupts[0].value if snap.interrupts else None
         return RunSnapshot(
             run_id=run_id,
-            status=values.get("status"),
+            status=RunStatus(values["status"]) if values.get("status") else None,
             values=values,
             interrupt=interrupt,
             next_nodes=tuple(snap.next),
