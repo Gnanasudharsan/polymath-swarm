@@ -3,6 +3,7 @@ back-translation check (Lean → English, judged against the original claim)."""
 
 from __future__ import annotations
 
+import asyncio
 import re
 from typing import ClassVar
 
@@ -29,7 +30,7 @@ _THEOREM = re.compile(r"^\s*theorem\s+([A-Za-z_][A-Za-z0-9_'.]*)", re.MULTILINE)
 class Selection(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    claim_ids: list[str] = Field(default_factory=list, max_length=3)
+    claim_ids: list[str] = Field(default_factory=list, max_length=2)
 
 
 class LeanAttempt(BaseModel):
@@ -82,19 +83,17 @@ class FormalizerAgent(BaseAgent):
         chosen = await self.ask(
             Selection,
             f"{brief}\n\n## Open claims\n{render_claims(candidates)}\n\n"
-            "Pick up to 3 claim ids that are precise mathematical statements worth formalizing, "
-            "most important first.",
+            "Pick up to 2 claim ids worth formalizing: prefer the claim that states the main "
+            "result in full, then one key lemma. Most important first.",
             usage,
             prompt="formalizer",
         )
         by_id = {c.id: c for c in candidates}
-        claims: list[Claim] = []
-        notes: list[str] = []
-        for cid in chosen.claim_ids:
-            if cid in by_id:
-                claim, note = await self._formalize(by_id[cid], brief, usage)
-                claims.append(claim)
-                notes.append(note)
+        picked = [by_id[cid] for cid in dict.fromkeys(chosen.claim_ids) if cid in by_id]
+        # LLM rounds run concurrently; the Lean REPL serialises the checks themselves.
+        done = await asyncio.gather(*(self._formalize(c, brief, usage) for c in picked))
+        claims = [c for c, _ in done]
+        notes = [n for _, n in done]
         return self.result(task, "Formalization:\n" + "\n".join(notes), usage, claims=claims)
 
     async def _formalize(

@@ -23,6 +23,7 @@ from polymath.graph.state import (
     task_outcomes,
 )
 from polymath.llm.cost import LLMUsage
+from polymath.llm.usage_scope import usage_scope
 from polymath.verification.report import EvidenceReport, render_markdown
 
 log = get_logger(__name__)
@@ -197,7 +198,8 @@ def route(state: SwarmState, runtime: Runtime[RunContext]) -> list[Send] | str:
                 run_id=state["run_id"],
                 problem=state["problem"],
                 task=state["plan"].tasks[tid],
-                deps={d: results[d] for d in state["plan"].tasks[tid].deps},
+                # skipped inputs have no result; synthesis may still run without them
+                deps={d: results[d] for d in state["plan"].tasks[tid].deps if d in results},
                 claims=list((state.get("claims") or {}).values()),
             ),
         )
@@ -217,14 +219,21 @@ async def execute_task(payload: TaskInput, runtime: Runtime[RunContext]) -> dict
         messages=[m for r in deps.values() for m in r.messages],
         notes="\n\n".join(f"### Output of `{tid}`\n{r.output}" for tid, r in deps.items()),
     )
-    try:
-        executor = ctx.executor_for(task.assigned_role)
-        result = await asyncio.wait_for(executor.run(task, agent_ctx), ctx.task_timeout_s)
-    except (TimeoutError, BudgetExceededError, LookupError) as exc:
-        result = _failed(task, f"{type(exc).__name__}: {exc}")
-    except Exception as exc:
-        log.exception("graph.task_failed", run_id=run_id, task_id=task.id)
-        result = _failed(task, f"{type(exc).__name__}: {exc}")
+    timeout = ctx.timeout_for(task)
+    with usage_scope() as spent:
+        try:
+            executor = ctx.executor_for(task.assigned_role)
+            result = await asyncio.wait_for(executor.run(task, agent_ctx), timeout)
+        except TimeoutError:
+            result = _failed(task, f"TimeoutError: task exceeded {timeout:g}s")
+        except (BudgetExceededError, LookupError) as exc:
+            result = _failed(task, f"{type(exc).__name__}: {exc}")
+        except Exception as exc:
+            log.exception("graph.task_failed", run_id=run_id, task_id=task.id)
+            result = _failed(task, f"{type(exc).__name__}: {exc}")
+    if spent:
+        # The gateway saw every call, including those of a task that failed or timed out.
+        result = result.model_copy(update={"usage": list(spent)})
 
     for claim in result.claims:
         await ctx.blackboard.post(

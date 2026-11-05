@@ -26,6 +26,7 @@ from polymath.core.models import AgentRole
 from polymath.core.tracing import get_tracer
 from polymath.llm.cost import CostTracker, LLMUsage
 from polymath.llm.ledger import SpendLedger
+from polymath.llm.usage_scope import record_usage
 
 log = get_logger(__name__)
 
@@ -196,6 +197,7 @@ class LLMGateway:
             self.budget.record(tokens=record.total_tokens, usd=record.usd)
         if self.ledger is not None:
             self.ledger.append(record)
+        record_usage(record)
         log.info(
             "llm.call",
             role=role.value,

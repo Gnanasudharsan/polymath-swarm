@@ -113,11 +113,32 @@ Evidence accepted by the gate:
 - **computation** — code re-executed in the sandbox reproduces the result
 - **formal_proof** — the Lean 4 file compiles against Mathlib with zero `sorry`/`admit`
 
+## Specialists and the verification gate (Phase 4)
+
+Agents never self-certify. Each produces a structured artifact; code runs it through the MCP tools
+and attaches typed evidence; the gate re-checks all evidence before synthesis (ADR-0006).
+
+```mermaid
+flowchart LR
+    R[Reasoner<br/>claims] --> C[Critic<br/>verdict + counterexample search]
+    L[Literature<br/>verbatim quotes] --> G
+    K[Compute<br/>PASS/FAIL programs] --> G
+    F[Formalizer<br/>Lean proof + back-translation] --> G
+    C -->|refuted/challenged| V[revise_rN → critique_rN<br/>≤ 2 rounds]
+    V --> G
+    C --> G{Verification gate<br/>re-fetch quote · re-run program ·<br/>re-verify Lean + equivalence ·<br/>re-run counterexample}
+    G -->|verified| S[Synthesizer<br/>cites only verified claims]
+    G -->|other| J[Conjectures / refuted]
+    S --> Rep[(Evidence report<br/>Markdown + JSON)]
+    J --> Rep
+```
+
 ## Budget & degradation
 
 Every run carries a `RunBudget` (max USD, tokens, wall-clock, iterations). The supervisor checks
-remaining budget before dispatching; near the ceiling it drops optional critics and routes to cheaper
-models, and at the ceiling it terminates and synthesizes with whatever has been verified.
+remaining budget before dispatching; near the ceiling (80%) it skips optional work (revision rounds)
+and the gateway routes to the degraded model; at the ceiling dispatch stops. A cross-run spend ledger
+(`POLYMATH_SPEND_LEDGER`, `POLYMATH_SPEND_CAP_USD`) adds a hard cap across runs and processes.
 
 ## Tool layer (MCP)
 
