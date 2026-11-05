@@ -67,6 +67,35 @@ def theorem_statement(lean_code: str, name: str) -> str:
     return f"theorem {name}{match.group(1)}".strip() if match else lean_code
 
 
+_DEFINITION = re.compile(
+    r"^(?:@\[[^\]]*\]\s*)?(?:noncomputable\s+|private\s+|protected\s+)*"
+    r"(?:def|abbrev|structure|inductive|class|instance|notation|infix[lr]?|prefix|postfix)\b"
+)
+_TOP_LEVEL = re.compile(r"^\S")
+
+
+def definitions(lean_code: str) -> list[str]:
+    """Top-level definitions in the file (their full text). Proved lemmas are omitted: Lean has
+    checked them, but definitions change what a statement *means*."""
+    blocks: list[list[str]] = []
+    current: list[str] | None = None
+    for line in lean_code.splitlines():
+        if _TOP_LEVEL.match(line):
+            current = [line] if _DEFINITION.match(line) else None
+            if current is not None:
+                blocks.append(current)
+        elif current is not None:
+            current.append(line)
+    return ["\n".join(b).rstrip() for b in blocks]
+
+
+def statement_context(lean_code: str, name: str) -> str:
+    """What back-translation sees: every definition, then the theorem header."""
+    defs = definitions(lean_code)
+    header = theorem_statement(lean_code, name)
+    return "\n\n".join([*defs, header]) if defs else header
+
+
 def diagnostics_text(v: LeanVerification) -> str:
     lines = [f"line {d.line}: {d.severity}: {d.message}" for d in v.check.diagnostics]
     lines += [f"goal at sorry (line {s.line}): {s.goal}" for s in v.check.sorries]
@@ -143,7 +172,9 @@ class FormalizerAgent(BaseAgent):
         if attempt is None:
             return [claim], f"- {claim.statement}: no attempt"
 
-        statement = theorem_statement(attempt.lean_code, attempt.theorem_name)
+        # Back-translation sees the statement *and* any definitions it uses (a custom
+        # `def EvenN n := True` would otherwise slip through).
+        statement = statement_context(attempt.lean_code, attempt.theorem_name)
         back = await self.ask(BackTranslation, f"```lean\n{statement}\n```", usage,
                               prompt="backtranslate")  # fmt: skip
         judge = await self.ask(

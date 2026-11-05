@@ -228,3 +228,17 @@ async def test_synthesizer_without_verified_claims_says_so(settings: Settings) -
 def test_strip_unverified_citations() -> None:
     text, bad = strip_unverified_citations("a [claim_aa] b [claim_bb]", {"claim_aa"})
     assert text == "a [claim_aa] b [unverified]" and bad == ["claim_bb"]
+
+
+def test_backtranslation_context_includes_definitions_not_proofs() -> None:
+    from polymath.agents.formalizer import statement_context
+
+    code = (
+        "namespace P\n\ndef EvenN (n : Nat) : Prop := True\n\n"
+        "lemma helper (n : Nat) : EvenN n := by\n  trivial\n\nend P\n\nopen P\n\n"
+        "theorem t : ∀ n : Nat, EvenN (n * (n + 1)) := by\n  intro n; trivial\n"
+    )
+    ctx = statement_context(code, "t")
+    assert "def EvenN (n : Nat) : Prop := True" in ctx  # the vacuous definition is exposed
+    assert "helper" not in ctx and "trivial" not in ctx
+    assert ctx.endswith("theorem t : ∀ n : Nat, EvenN (n * (n + 1))")
