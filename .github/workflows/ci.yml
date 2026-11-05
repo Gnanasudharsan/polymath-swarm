@@ -37,6 +37,11 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --locked
+      - name: Cache local embedding/rerank models
+        uses: actions/cache@v6.1.0
+        with:
+          path: ~/.cache/polymath
+          key: polymath-models-bge-small-v1.5-minilm-l6
       - run: docker compose up -d --wait
       - run: docker compose --profile tools build sandbox
       # Lean (multi-GB Mathlib image) runs in lean.yml; public-API tests are skipped

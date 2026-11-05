@@ -1,6 +1,6 @@
 """Run one of the end-to-end demos and save its evidence report and trace.
 
-    uv run python examples/run_demo.py proof|computation|literature [--max-usd 1.0]
+    uv run python examples/run_demo.py proof|computation|literature|reuse [--max-usd 1.0]
 
 Needs `docker compose up -d --wait`, the tool images, and a provider key in the environment.
 Outputs go to examples/<name>/{report.md,report.json,trace.json}.
@@ -22,6 +22,8 @@ HERE = Path(__file__).parent
 
 PROBLEMS: dict[str, str] = {
     "proof": "Prove that for every natural number n, the product n * (n + 1) is even.",
+    # Run after `proof`: episodic memory recalls its verified lemma (Phase 5).
+    "reuse": "Prove that for every natural number n, the product n * (n + 1) * (n + 2) is even.",
     "computation": (
         "Compute the sum of the first 100 prime numbers, and determine whether that sum is itself "
         "a prime number."

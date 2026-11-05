@@ -3,6 +3,18 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow SemVer.
 
+## [0.5.0] - 2026-11-05
+
+### Added
+- Knowledge store on Postgres + pgvector; arXiv PDF ingestion; hybrid retrieval with RRF and rerank.
+- `knowledge` MCP server; full-text citations and full-text citation verification.
+- Episodic memory and claims store with recall of verified claims into related runs.
+- Retrieval eval set and runner; `reuse` demo; ADR-0007.
+
+### Fixed
+- Memory only stores the gate's verdicts (no cross-run laundering of rejected claims).
+- PDF text is stripped of NUL/control characters.
+
 ## [0.4.0] - 2026-11-05
 
 ### Added

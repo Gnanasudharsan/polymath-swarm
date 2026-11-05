@@ -230,6 +230,9 @@ class Claim(_Model):
     evidence: list[Evidence] = Field(default_factory=list)
     proposed_by: AgentRole | None = None
     task_id: str | None = None
+    origin_run_id: str | None = Field(
+        default=None, description="Set when the claim was recalled from an earlier run's memory."
+    )
     created_at: datetime = Field(default_factory=utcnow)
 
     def transition(self, new_status: ClaimStatus) -> Claim:

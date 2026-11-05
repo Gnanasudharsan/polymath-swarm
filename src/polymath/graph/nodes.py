@@ -12,7 +12,16 @@ from langgraph.types import Command, Send, interrupt
 from polymath.agents.base import AgentContext, AgentResult
 from polymath.core.budget import BudgetExceededError
 from polymath.core.logging import get_logger
-from polymath.core.models import Claim, EventKind, Problem, Task, TaskStatus, TaskType
+from polymath.core.models import (
+    Claim,
+    ClaimStatus,
+    EventKind,
+    Problem,
+    Task,
+    TaskStatus,
+    TaskType,
+    new_id,
+)
 from polymath.graph.context import RunContext
 from polymath.graph.revision import add_revision_round, is_optional, triggering_claims
 from polymath.graph.state import (
@@ -65,6 +74,7 @@ async def plan(
         return Command(
             goto=FINALIZE, update={"status": RunStatus.FAILED, "stop_reason": f"planner: {exc}"}
         )
+    recalled = await _recall(state, ctx, problem) if not state.get("plan_rounds") else {}
     await ctx.blackboard.post(
         run_id,
         EventKind.PLAN_CREATED,
@@ -81,11 +91,45 @@ async def plan(
             "plan_feedback": "",
             "approved": False,
             "usage": _usage(usage),
+            "claims": recalled,
             "status": (
                 RunStatus.AWAITING_APPROVAL if _needs_approval(state, ctx) else RunStatus.EXECUTING
             ),
         },
     )
+
+
+async def _recall(state: SwarmState, ctx: RunContext, problem: Problem) -> dict[str, Claim]:
+    """Seed verified claims from similar earlier runs (the gate re-checks them before use)."""
+    if ctx.memory is None:
+        return {}
+    try:
+        hits = await ctx.memory.reusable_claims(problem, k=ctx.recall_k)
+    except Exception as exc:  # memory is an optimisation; never fail a run over it
+        log.warning("graph.recall_failed", error=str(exc))
+        return {}
+    recalled: dict[str, Claim] = {}
+    seen: set[str] = set()
+    for stored, sim in hits:
+        key = " ".join(stored.claim.statement.lower().split())
+        if key in seen:
+            continue
+        seen.add(key)
+        # Recalled claims start as *proposed*: only this run's gate can make them verified.
+        claim = stored.claim.model_copy(
+            update={
+                "id": new_id("claim"),
+                "origin_run_id": stored.run_id,
+                "task_id": None,
+                "status": ClaimStatus.PROPOSED,
+            }
+        )
+        recalled[claim.id] = claim
+        await ctx.blackboard.post(
+            state["run_id"], EventKind.MESSAGE, topic="memory_recall", claim_id=claim.id,
+            origin_run_id=stored.run_id, similarity=round(sim, 4), statement=claim.statement,
+        )  # fmt: skip
+    return recalled
 
 
 async def approve(
@@ -281,6 +325,14 @@ async def finalize(state: SwarmState, runtime: Runtime[RunContext]) -> dict[str,
             status = RunStatus.FAILED
             update["stop_reason"] = "no task succeeded"
     update["status"] = status
+    if ctx.memory is not None:
+        try:
+            await ctx.memory.record_run(
+                run_id, state["problem"], status.value, update.get("answer", ""),
+                claims_to_remember(state, update.get("report")), update.get("report"),
+            )  # fmt: skip
+        except Exception as exc:
+            log.warning("graph.memory_record_failed", error=str(exc))
     await ctx.blackboard.post(
         run_id,
         EventKind.RUN_FINISHED,
@@ -288,6 +340,20 @@ async def finalize(state: SwarmState, runtime: Runtime[RunContext]) -> dict[str,
         stop_reason=update.get("stop_reason", state.get("stop_reason", "")),
     )
     return update
+
+
+def claims_to_remember(state: SwarmState, report: dict[str, Any] | None) -> list[Claim]:
+    """Only the gate decides what is verified. With a report, store the gate's verdicts; without
+    one, nothing counts as verified (the merged run state never downgrades a claim)."""
+    if report:
+        buckets = ("verified", "conjectures", "refuted")
+        return [Claim.model_validate(rc["claim"]) for b in buckets for rc in report.get(b, [])]
+    return [
+        c.model_copy(update={"status": ClaimStatus.PROPOSED})
+        if c.status == ClaimStatus.VERIFIED
+        else c
+        for c in (state.get("claims") or {}).values()
+    ]
 
 
 def _report(

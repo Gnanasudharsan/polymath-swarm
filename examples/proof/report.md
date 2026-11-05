@@ -4,23 +4,29 @@
 
 ## Answer
 
-Yes — for every natural number n, the product n(n+1) is even [claim_e23b05fb0458].
+Yes — for every natural number n, n*(n+1) is even, i.e. 2 divides n*(n+1) [claim_ae51c27846ae].
 
-This is the formalized and verified theorem: for all n : ℕ, n * (n + 1) is even [claim_e23b05fb0458].
+This follows by the parity dichotomy (every natural n is either even or odd) together with the usual case analysis in the formal proof [claim_e6354ab22e11].
 
-## Verified claims (1)
+## Verified claims (2)
 
-- `claim_e23b05fb0458` For every natural number n, the product n(n+1) is even.
+- `claim_ae51c27846ae` For every natural number n, 2 divides n * (n + 1); formally: ∀ n : ℕ, 2 ∣ (n * (n + 1)).
+  - ✅ Lean-verified: Lean 4 `two_dvd_mul_succ`: proved, faithful — gate: **supports** (Lean re-verified `two_dvd_mul_succ` (propext, Classical.choice, Quot.sound))
   - 🔍 critique: critic: accept
-  - ✅ Lean-verified: Lean 4 `forall_n_mul_succ_even`: proved, faithful — gate: **supports** (Lean re-verified `forall_n_mul_succ_even` (propext, Classical.choice, Quot.sound))
-
-## Conjectures — not verified (2)
-
-- `claim_6af5de20c612` (proposed) Every integer is either even or odd (i.e., for each integer m exactly one of the following holds: there exists k with m = 2k, or there exists k with m = 2k+1).
+- `claim_e6354ab22e11` Every natural number n is either even or odd (parity dichotomy): either ∃ k, n = 2*k, or ∃ k, n = 2*k + 1.
+  - ✅ Lean-verified: Lean 4 `two_dvd_mul_succ`: proved, faithful — gate: **supports** (Lean re-verified `two_dvd_mul_succ` (propext, Classical.choice, Quot.sound))
   - 🔍 critique: critic: accept
-- `claim_39125dcbe569` (proposed) If n is even then n(n+1) is even; if n is odd then n+1 is even, hence n(n+1) is even.
+
+## Conjectures — not verified (4)
+
+- `claim_e2d251b9f920` (proposed) n(n+1) is even for every natural number n
+  - (no evidence)
+- `claim_d2a0064a8790` (proposed) n(n+1) is even for every natural number n
+  - (no evidence)
+- `claim_1e2636f3daed` (proposed) If n is even, so n = 2*k for some k, then 2 divides n*(n+1).
   - 🔍 critique: critic: accept
-  - ✅ Lean-verified: Lean 4 `even_mul_succ_of_parity_cases`: proved, NOT faithful — gate: **inconclusive** (Lean statement not judged equivalent to the claim)
+- `claim_38916976d024` (proposed) If n is odd, so n = 2*k + 1 for some k, then n+1 is even (n+1 = 2*(k+1)), and hence 2 divides n*(n+1).
+  - 🔍 critique: critic: accept
 
 ---
-Run `run_14f7b830feec` · 15310 tokens · $0.0631 · verified-claim rate 33%
+Run `run_618d4184c4e2` · 19699 tokens · $0.1028 · verified-claim rate 33%

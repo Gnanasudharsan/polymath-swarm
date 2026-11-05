@@ -71,7 +71,10 @@ def render_markdown(report: EvidenceReport) -> str:
         "",
     ]
     for rc in report.verified:
-        out += [f"- `{rc.claim.id}` {rc.claim.statement}", *_evidence_lines(rc)]
+        reused = (
+            f" ♻️ _reused from run `{rc.claim.origin_run_id}`_" if rc.claim.origin_run_id else ""
+        )
+        out += [f"- `{rc.claim.id}` {rc.claim.statement}{reused}", *_evidence_lines(rc)]
     if not report.verified:
         out.append("_No claim passed the verification gate._")
     out += ["", f"## Conjectures — not verified ({len(report.conjectures)})", ""]

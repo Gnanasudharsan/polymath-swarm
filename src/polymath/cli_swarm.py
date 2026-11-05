@@ -26,6 +26,8 @@ from polymath.graph.planner import LLMPlanner
 from polymath.graph.runner import ContextFactory, RunSnapshot, SwarmRunner
 from polymath.graph.state import task_outcomes
 from polymath.llm.gateway import LLMGateway
+from polymath.memory.episodic import EpisodicMemory
+from polymath.memory.knowledge import open_knowledge
 
 MemoryOpt = Annotated[
     bool, typer.Option("--memory", help="In-memory checkpoints/events (no Postgres/Redis).")
@@ -38,14 +40,18 @@ NoToolsOpt = Annotated[
 
 
 def context_factory(
-    settings: Settings, blackboard: Blackboard, tools: Tools | None
+    settings: Settings,
+    blackboard: Blackboard,
+    tools: Tools | None,
+    memory: EpisodicMemory | None = None,
 ) -> ContextFactory:
     def make(budget: BudgetTracker) -> RunContext:
         gateway = LLMGateway(settings, budget=budget)
         executors = specialists(gateway, tools) if tools else default_executors(gateway)
         return RunContext(
-            planner=LLMPlanner(gateway), executors=executors, blackboard=blackboard, budget=budget
-        )
+            planner=LLMPlanner(gateway), executors=executors, blackboard=blackboard,
+            budget=budget, memory=memory,
+        )  # fmt: skip
 
     return make
 
@@ -62,10 +68,21 @@ async def open_runner(
                 infra.blackboard,
             )
             return
-        async with open_tools(settings) as tools:
+        if not settings.memory_enabled:
+            async with open_tools(settings) as tools:
+                yield SwarmRunner(
+                    compile_graph(infra.checkpointer),
+                    context_factory(settings, infra.blackboard, tools),
+                    infra.blackboard,
+                )
+            return
+        async with (
+            open_knowledge(settings, in_memory=in_memory) as knowledge,
+            open_tools(settings, knowledge=knowledge) as tools,
+        ):
             yield SwarmRunner(
                 compile_graph(infra.checkpointer),
-                context_factory(settings, infra.blackboard, tools),
+                context_factory(settings, infra.blackboard, tools, knowledge.episodic),
                 infra.blackboard,
             )
 

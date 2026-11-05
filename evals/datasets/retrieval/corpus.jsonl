@@ -1,0 +1,60 @@
+{"id": "ram1", "topic": "ram", "text": "The diagonal Ramsey number R(k) is the least n such that every two-colouring of the edges of the complete graph on n vertices contains a monochromatic clique on k vertices."}
+{"id": "ram2", "topic": "ram", "text": "Erd\u0151s and Szekeres showed in 1935 that R(k) is at most the binomial coefficient 2k-2 choose k-1, which is roughly 4 to the power k."}
+{"id": "ram3", "topic": "ram", "text": "Erd\u0151s used a random colouring in 1947 to prove the lower bound R(k) greater than 2 to the power k/2, an early landmark of the probabilistic method."}
+{"id": "ram4", "topic": "ram", "text": "In 2023 Campos, Griffiths, Morris and Sahasrabudhe proved R(k) is at most (4 - epsilon)^k, the first exponential improvement of the classical upper bound."}
+{"id": "ram5", "topic": "ram", "text": "The exact value R(5) remains unknown; it is only known to lie between 43 and 46, while R(4) equals 18."}
+{"id": "pri1", "topic": "pri", "text": "Euclid proved that there are infinitely many primes by considering one plus the product of any finite list of primes."}
+{"id": "pri2", "topic": "pri", "text": "The prime number theorem states that the number of primes up to x is asymptotic to x divided by the natural logarithm of x."}
+{"id": "pri3", "topic": "pri", "text": "Dirichlet's theorem guarantees infinitely many primes in every arithmetic progression a, a+d, a+2d with gcd(a, d) = 1."}
+{"id": "pri4", "topic": "pri", "text": "Zhang proved in 2013 that there are infinitely many pairs of primes differing by at most 70 million, later reduced to 246 by the Polymath project."}
+{"id": "pri5", "topic": "pri", "text": "The polynomial n^2 + n + 41 found by Euler produces primes for n from 0 to 39 but gives 1681 = 41^2 at n = 40."}
+{"id": "trf1", "topic": "trf", "text": "The Transformer architecture replaces recurrence entirely with self-attention, allowing all positions of a sequence to be processed in parallel."}
+{"id": "trf2", "topic": "trf", "text": "Scaled dot-product attention divides the query-key dot products by the square root of the key dimension before applying a softmax."}
+{"id": "trf3", "topic": "trf", "text": "Multi-head attention runs several attention functions in parallel on different learned projections and concatenates their outputs."}
+{"id": "trf4", "topic": "trf", "text": "Because self-attention is permutation invariant, Transformers add positional encodings, originally sinusoids of different frequencies, to the input embeddings."}
+{"id": "trf5", "topic": "trf", "text": "The cost of full self-attention grows quadratically with sequence length, which motivated sparse and linear attention variants."}
+{"id": "lea1", "topic": "lea", "text": "Lean 4 is an interactive theorem prover and functional programming language based on dependent type theory."}
+{"id": "lea2", "topic": "lea", "text": "Mathlib is the community library of formalised mathematics for Lean, covering algebra, analysis, topology and number theory."}
+{"id": "lea3", "topic": "lea", "text": "In Lean a proof that still contains the sorry placeholder compiles with a warning, so the checker must reject any declaration that uses sorry."}
+{"id": "lea4", "topic": "lea", "text": "The command #print axioms lists which axioms a theorem depends on, such as propositional extensionality, choice and quotient soundness."}
+{"id": "lea5", "topic": "lea", "text": "The miniF2F benchmark contains olympiad-level competition problems stated formally, used to evaluate automated theorem provers."}
+{"id": "gra1", "topic": "gra", "text": "A graph is planar if it can be drawn in the plane without edge crossings; Kuratowski characterised planar graphs by forbidden subdivisions of K5 and K3,3."}
+{"id": "gra2", "topic": "gra", "text": "The four colour theorem, proved with computer assistance by Appel and Haken in 1976, says every planar map can be coloured with four colours."}
+{"id": "gra3", "topic": "gra", "text": "Euler's formula for connected planar graphs states that vertices minus edges plus faces equals two."}
+{"id": "gra4", "topic": "gra", "text": "A bipartite graph contains no odd cycle, and conversely every graph without odd cycles is bipartite."}
+{"id": "gra5", "topic": "gra", "text": "Tur\u00e1n's theorem gives the maximum number of edges in a graph on n vertices that contains no complete subgraph on r+1 vertices."}
+{"id": "cal1", "topic": "cal", "text": "The Gaussian integral of e to the minus x squared over the whole real line equals the square root of pi."}
+{"id": "cal2", "topic": "cal", "text": "The gamma function extends the factorial, with Gamma(n+1) = n! for every non-negative integer n."}
+{"id": "cal3", "topic": "cal", "text": "The integral from zero to infinity of x cubed times e to the minus x equals 3 factorial, that is 6, by the gamma function identity."}
+{"id": "cal4", "topic": "cal", "text": "Integration by parts transfers a derivative from one factor of an integrand to the other at the cost of a boundary term."}
+{"id": "cal5", "topic": "cal", "text": "The fundamental theorem of calculus links differentiation and integration: the derivative of the integral of f from a to x is f(x)."}
+{"id": "cry1", "topic": "cry", "text": "RSA encryption relies on the difficulty of factoring the product of two large primes."}
+{"id": "cry2", "topic": "cry", "text": "Diffie and Hellman introduced public-key key exchange in 1976 based on the hardness of the discrete logarithm problem."}
+{"id": "cry3", "topic": "cry", "text": "Shor's algorithm would factor integers in polynomial time on a large quantum computer, breaking RSA."}
+{"id": "cry4", "topic": "cry", "text": "Lattice-based schemes such as Kyber are believed to resist quantum attacks and were standardised for post-quantum cryptography."}
+{"id": "cry5", "topic": "cry", "text": "A cryptographic hash function should be preimage resistant and collision resistant; SHA-256 produces 256-bit digests."}
+{"id": "pro1", "topic": "pro", "text": "The law of large numbers states that the sample mean of independent identically distributed variables converges to the expected value."}
+{"id": "pro2", "topic": "pro", "text": "The central limit theorem says suitably normalised sums of independent variables with finite variance converge in distribution to a normal law."}
+{"id": "pro3", "topic": "pro", "text": "The birthday paradox: in a group of 23 people the probability that two share a birthday exceeds one half."}
+{"id": "pro4", "topic": "pro", "text": "Markov's inequality bounds the probability that a non-negative random variable exceeds a by its expectation divided by a."}
+{"id": "pro5", "topic": "pro", "text": "A Markov chain is memoryless: the next state depends only on the current state, not on the earlier history."}
+{"id": "cpx1", "topic": "cpx", "text": "The P versus NP problem asks whether every problem whose solutions can be verified in polynomial time can also be solved in polynomial time."}
+{"id": "cpx2", "topic": "cpx", "text": "Cook and Levin proved that Boolean satisfiability is NP-complete, the first problem shown to be so."}
+{"id": "cpx3", "topic": "cpx", "text": "Karp showed in 1972 that 21 combinatorial problems, including clique and vertex cover, are NP-complete."}
+{"id": "cpx4", "topic": "cpx", "text": "The travelling salesman decision problem is NP-complete, while its Euclidean version admits a polynomial-time approximation scheme."}
+{"id": "cpx5", "topic": "cpx", "text": "Primality testing is in P, as shown by the deterministic AKS algorithm published in 2002."}
+{"id": "lin1", "topic": "lin", "text": "A square matrix is invertible exactly when its determinant is non-zero."}
+{"id": "lin2", "topic": "lin", "text": "The spectral theorem says every real symmetric matrix can be diagonalised by an orthogonal matrix and has real eigenvalues."}
+{"id": "lin3", "topic": "lin", "text": "The singular value decomposition factors any real matrix as an orthogonal matrix times a diagonal matrix times another orthogonal matrix."}
+{"id": "lin4", "topic": "lin", "text": "The rank-nullity theorem: the dimension of the domain equals the rank plus the dimension of the kernel."}
+{"id": "lin5", "topic": "lin", "text": "Gaussian elimination solves a system of n linear equations using on the order of n cubed arithmetic operations."}
+{"id": "num1", "topic": "num", "text": "Fermat's little theorem: if p is prime and a is not divisible by p, then a to the power p-1 is congruent to 1 modulo p."}
+{"id": "num2", "topic": "num", "text": "Andrew Wiles completed the proof of Fermat's Last Theorem in 1995 via the modularity of semistable elliptic curves."}
+{"id": "num3", "topic": "num", "text": "The Chinese remainder theorem reconstructs an integer modulo a product of pairwise coprime moduli from its residues."}
+{"id": "num4", "topic": "num", "text": "Every integer greater than one factors uniquely into primes, which is the fundamental theorem of arithmetic."}
+{"id": "num5", "topic": "num", "text": "The product of two consecutive integers n(n+1) is always even, since one of the two factors is even."}
+{"id": "opt1", "topic": "opt", "text": "Stochastic gradient descent updates parameters using the gradient of the loss on a small random mini-batch."}
+{"id": "opt2", "topic": "opt", "text": "Adam combines momentum with per-parameter adaptive learning rates estimated from running averages of squared gradients."}
+{"id": "opt3", "topic": "opt", "text": "Convex functions have no spurious local minima: every local minimum is a global minimum."}
+{"id": "opt4", "topic": "opt", "text": "Dropout randomly zeroes activations during training to reduce co-adaptation and overfitting."}
+{"id": "opt5", "topic": "opt", "text": "Batch normalisation standardises layer inputs using mini-batch statistics, which often speeds up training."}

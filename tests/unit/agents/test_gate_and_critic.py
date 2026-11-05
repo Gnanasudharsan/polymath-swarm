@@ -70,6 +70,22 @@ class TestGate:
         d = await gate.decide(_claim(missing))
         assert d.checks[0].outcome == "inconclusive"
 
+    async def test_full_text_citation_is_checked_against_reingested_text(self) -> None:
+        paper = Paper(source="arxiv", source_id="2303.09521", title="An exponential improvement",
+                      abstract="We prove an upper bound.")  # fmt: skip
+        body = (
+            "The key new idea is a book algorithm that finds large monochromatic books "
+            "in any red-blue colouring of the complete graph."
+        )
+        tools = FakeTools(papers={"arxiv:2303.09521": paper},
+                          full_texts={"arxiv:2303.09521": body})  # fmt: skip
+        cite = CitationPayload(source="arxiv", paper_id="2303.09521", title=paper.title,
+                               quote="a book algorithm that finds large monochromatic books",
+                               location="full_text")  # fmt: skip
+        d = await VerificationGate(tools).decide(_claim(cite))
+        assert d.verified and "full text" in d.checks[0].detail
+        assert tools.ingested == ["2303.09521"]  # the gate re-ingested it itself
+
     async def test_formal_proof_needs_reverify_and_equivalence(self) -> None:
         proof = FormalProofPayload(lean_code="theorem t : True := trivial", theorem_name="t",
                                    lean_verified=True, equivalent=True)  # fmt: skip

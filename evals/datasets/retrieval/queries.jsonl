@@ -1,0 +1,30 @@
+{"id": "q01", "query": "Who obtained the first exponential improvement on the upper bound for diagonal Ramsey numbers?", "relevant": ["ram4"]}
+{"id": "q02", "query": "classical upper bound binomial coefficient for two-colour clique Ramsey number", "relevant": ["ram2"]}
+{"id": "q03", "query": "probabilistic lower bound on R(k) using random colourings", "relevant": ["ram3"]}
+{"id": "q04", "query": "what is known about the value of R(5)", "relevant": ["ram5"]}
+{"id": "q05", "query": "why are there infinitely many primes", "relevant": ["pri1"]}
+{"id": "q06", "query": "asymptotic count of primes below x", "relevant": ["pri2"]}
+{"id": "q07", "query": "bounded gaps between primes result", "relevant": ["pri4"]}
+{"id": "q08", "query": "Euler's prime generating quadratic fails at which n", "relevant": ["pri5"]}
+{"id": "q09", "query": "attention without recurrence processes positions in parallel", "relevant": ["trf1"]}
+{"id": "q10", "query": "why divide by sqrt of key dimension in attention", "relevant": ["trf2"]}
+{"id": "q11", "query": "how do transformers know token order", "relevant": ["trf4"]}
+{"id": "q12", "query": "quadratic complexity of self attention in sequence length", "relevant": ["trf5"]}
+{"id": "q13", "query": "library of formalized mathematics for the Lean prover", "relevant": ["lea2"]}
+{"id": "q14", "query": "how to check which axioms a Lean theorem uses", "relevant": ["lea4"]}
+{"id": "q15", "query": "proofs containing sorry placeholders should be rejected", "relevant": ["lea3"]}
+{"id": "q16", "query": "benchmark of formal olympiad problems", "relevant": ["lea5"]}
+{"id": "q17", "query": "computer-assisted proof that maps need only four colours", "relevant": ["gra2"]}
+{"id": "q18", "query": "relation between vertices edges and faces of a planar graph", "relevant": ["gra3"]}
+{"id": "q19", "query": "graphs with no odd cycles", "relevant": ["gra4"]}
+{"id": "q20", "query": "value of the integral of x^3 e^-x from 0 to infinity", "relevant": ["cal3", "cal2"]}
+{"id": "q21", "query": "integral of exp(-x^2) over the real line", "relevant": ["cal1"]}
+{"id": "q22", "query": "factoring large numbers on a quantum computer", "relevant": ["cry3", "cry1"]}
+{"id": "q23", "query": "post-quantum encryption based on lattices", "relevant": ["cry4"]}
+{"id": "q24", "query": "probability that two of 23 people share a birthday", "relevant": ["pro3"]}
+{"id": "q25", "query": "normalised sums converge to a Gaussian distribution", "relevant": ["pro2"]}
+{"id": "q26", "query": "first problem proven NP-complete", "relevant": ["cpx2"]}
+{"id": "q27", "query": "deterministic polynomial-time primality test", "relevant": ["cpx5"]}
+{"id": "q28", "query": "when does a matrix have an inverse", "relevant": ["lin1"]}
+{"id": "q29", "query": "diagonalising symmetric matrices with orthogonal transformations", "relevant": ["lin2"]}
+{"id": "q30", "query": "is n times n plus one always an even number", "relevant": ["num5"]}
