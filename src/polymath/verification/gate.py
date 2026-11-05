@@ -20,6 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from polymath.agents.tools import ToolCallError, Tools
 from polymath.core.logging import get_logger
 from polymath.core.models import Claim, ClaimStatus, ClaimTransitionError, Evidence
+from polymath.mcp_servers.literature.sources import arxiv_base_id
 from polymath.verification.evidence import (
     CitationPayload,
     ComputationPayload,
@@ -111,6 +112,14 @@ class VerificationGate:
         text = f"{paper.title}\n{paper.abstract}"
         if quote_in_source(p.quote, text):
             return "supports", f"quote found in {p.source}:{p.paper_id} ({paper.title})"
+        if p.source == "arxiv":
+            # Full text: (re-)ingest the paper from its arXiv PDF and search the stored text.
+            key = f"arxiv:{arxiv_base_id(p.paper_id)}"
+            if not (await self.tools.paper_text(key)).text:
+                await self.tools.ingest_arxiv(p.paper_id)
+            full = (await self.tools.paper_text(key)).text
+            if quote_in_source(p.quote, full):
+                return "supports", f"quote found in the full text of {key} ({paper.title})"
         return "inconclusive", f"quote not found in {p.source}:{p.paper_id}"
 
     async def _computation(self, p: ComputationPayload) -> tuple[CheckOutcome, str]:

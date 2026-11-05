@@ -11,6 +11,7 @@ from polymath.blackboard import Blackboard
 from polymath.core.budget import BudgetTracker
 from polymath.core.models import AgentRole, Problem, Task, TaskGraph, TaskType
 from polymath.llm.cost import LLMUsage
+from polymath.memory.episodic import EpisodicMemory
 
 
 class TaskExecutor(Protocol):
@@ -29,6 +30,8 @@ class RunContext:
     executors: dict[AgentRole, TaskExecutor]
     blackboard: Blackboard
     budget: BudgetTracker
+    memory: EpisodicMemory | None = None
+    recall_k: int = 5
     require_approval: bool = False
     max_plan_rounds: int = 3
     max_revision_rounds: int = 2

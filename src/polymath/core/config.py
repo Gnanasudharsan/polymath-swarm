@@ -101,6 +101,14 @@ class Settings(BaseSettings):
     openalex_api_key: SecretStr | None = Field(default=None, validation_alias="OPENALEX_API_KEY")
     literature_cache_ttl_s: int = Field(default=86_400, gt=0)
 
+    # Memory & knowledge (local ONNX models via fastembed; downloaded once to the cache dir)
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
+    embedding_dim: int = 384
+    rerank_model: str | None = "Xenova/ms-marco-MiniLM-L-6-v2"
+    model_cache_dir: Path = Field(default_factory=lambda: Path.home() / ".cache" / "polymath")
+    memory_enabled: bool = True
+    memory_min_similarity: float = Field(default=0.80, ge=0.0, le=1.0)
+
     # Docker images for tool servers
     sandbox_image: str = "polymath-sandbox:latest"
     lean_image: str = "polymath-lean:v4.35.0"

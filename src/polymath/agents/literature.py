@@ -13,10 +13,13 @@ from polymath.core.models import AgentRole, Claim, Task
 from polymath.llm.cost import LLMUsage
 from polymath.llm.gateway import LLMGateway
 from polymath.mcp_servers.literature.models import Paper
+from polymath.mcp_servers.literature.sources import arxiv_base_id
 from polymath.verification.evidence import CitationPayload, make_evidence, quote_in_source
 
 log = get_logger(__name__)
 MAX_PAPERS = 12
+FULL_TEXT_PAPERS = 2  # arXiv hits ingested (PDF → chunks) per task
+MAX_PASSAGES = 6
 
 
 class Query(BaseModel):
@@ -109,6 +112,45 @@ class LiteratureAgent(BaseAgent):
             claims.append(claim)
         cited = "\n".join(f"- {p.title} ({p.year}) {p.url or ''}" for p in papers[:5])
         return self.result(task, f"{found.summary}\n\nTop sources:\n{cited}", usage, claims=claims)
+
+    async def _passages(self, papers: list[Paper], query: str) -> list[tuple[str, str, str]]:
+        """Ingest the top arXiv hits' full text, then retrieve passages: (key, title, text)."""
+        if not self.toolset.has_knowledge:
+            return []
+        for p in [p for p in papers if p.arxiv_id][:FULL_TEXT_PAPERS]:
+            try:
+                await self.toolset.ingest_arxiv(p.arxiv_id or "")
+            except ToolCallError as exc:
+                log.warning("literature.ingest_failed", paper=p.arxiv_id, error=str(exc))
+        try:
+            hits = (await self.toolset.search_knowledge(query, k=MAX_PASSAGES)).hits
+        except ToolCallError:
+            return []
+        titles: dict[str, str] = {}
+        out = []
+        for h in hits:
+            key = h.chunk.paper_key
+            if not key.startswith("arxiv:"):
+                continue
+            if key not in titles:
+                stored = (await self.toolset.paper_text(key)).paper
+                titles[key] = stored.title if stored else key
+            out.append((key, titles[key], h.chunk.text))
+        return out
+
+    def _passage_claim(self, f: Finding, passage: tuple[str, str, str], task: Task) -> Claim | None:
+        key, title, text = passage
+        claim = Claim(statement=f.statement, confidence=f.confidence, proposed_by=self.role,
+                      task_id=task.id)  # fmt: skip
+        if not quote_in_source(f.quote, text):
+            return claim
+        payload = CitationPayload(
+            source="arxiv", paper_id=key.removeprefix("arxiv:"), title=title,
+            url=f"https://arxiv.org/abs/{arxiv_base_id(key.removeprefix('arxiv:'))}",
+            quote=f.quote, location="full_text",
+        )  # fmt: skip
+        evidence = make_evidence(payload, summary=f"{title} (full text)", source=self.role)
+        return claim.with_evidence(evidence)
 
     async def _search(self, plan: QueryPlan) -> list[Paper]:
         seen: set[str] = set()

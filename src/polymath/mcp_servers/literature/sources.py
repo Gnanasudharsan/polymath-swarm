@@ -33,6 +33,11 @@ def normalise_arxiv_id(raw: str) -> str:
     return match.group(0)
 
 
+def arxiv_base_id(raw: str) -> str:
+    """'2303.09521v2' → '2303.09521' (old-style ids like 'solv-int/9901001v1' keep their 'v')."""
+    return re.sub(r"v\d+$", "", normalise_arxiv_id(raw))
+
+
 def parse_arxiv_feed(xml: str) -> tuple[list[Paper], int | None]:
     root: Element = SafeET.fromstring(xml)
     total_el = root.find("{http://a9.com/-/spec/opensearch/1.1/}totalResults")

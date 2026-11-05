@@ -31,6 +31,7 @@ class CitationPayload(_Payload):
     title: str
     url: str | None = None
     quote: str = Field(description="Verbatim passage from the source supporting the claim.")
+    location: Literal["abstract", "full_text"] = "abstract"
 
 
 class ComputationPayload(_Payload):
