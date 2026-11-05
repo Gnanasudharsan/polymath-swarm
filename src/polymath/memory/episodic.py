@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from polymath.core.models import Claim, ClaimStatus, Problem
+from polymath.core.models import Claim, ClaimStatus, EvidenceKind, Problem
 from polymath.memory.embeddings import Embedder
 from polymath.memory.models import KnowledgeStore, RunRecord, StoredClaim
 
@@ -34,5 +34,12 @@ class EpisodicMemory:
     ) -> list[tuple[StoredClaim, float]]:
         """Verified claims from earlier runs that are relevant to ``problem``."""
         (qvec,) = await self.embedder.embed([problem.statement])
-        hits = await self.store.similar_claims(qvec, k, (ClaimStatus.VERIFIED.value,))
-        return [(sc, sim) for sc, sim in hits if sim >= self.min_similarity]
+        hits = await self.store.similar_claims(qvec, k * 3, (ClaimStatus.VERIFIED.value,))
+        # Only claims backed by re-checkable evidence (a critique alone proves nothing).
+        usable = [
+            (sc, sim)
+            for sc, sim in hits
+            if sim >= self.min_similarity
+            and any(e.kind is not EvidenceKind.CRITIQUE for e in sc.claim.evidence)
+        ]
+        return usable[:k]

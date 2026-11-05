@@ -116,9 +116,11 @@ class BaseAgent(ABC):
 
 
 def open_claims(context: AgentContext) -> list[Claim]:
-    """Claims still awaiting a verdict."""
+    """Claims still awaiting a verdict. Claims recalled from memory are excluded: they carry
+    evidence from an earlier run, which the gate re-checks at synthesis, so redoing them is
+    waste."""
     final = {ClaimStatus.VERIFIED, ClaimStatus.REFUTED}
-    return [c for c in context.claims if c.status not in final]
+    return [c for c in context.claims if c.status not in final and c.origin_run_id is None]
 
 
 def render_claims(claims: list[Claim]) -> str:

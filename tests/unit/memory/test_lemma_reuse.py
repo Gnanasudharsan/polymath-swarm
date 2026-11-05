@@ -18,10 +18,14 @@ from polymath.core.models import (
 )
 from polymath.graph.builder import compile_graph
 from polymath.graph.checkpointer import memory_checkpointer
+from polymath.graph.nodes import claims_to_remember
 from polymath.graph.runner import SwarmRunner
 from polymath.memory.embeddings import HashEmbedder
 from polymath.memory.episodic import EpisodicMemory
 from polymath.memory.inmemory import InMemoryKnowledgeStore
+from polymath.verification.evidence import FormalProofPayload, make_evidence
+from polymath.verification.gate import GateDecision
+from polymath.verification.report import EvidenceReport, ReportedClaim
 from tests.swarm_fakes import FixedPlanner, make_factory
 
 LEMMA = "n(n+1) is even for every natural number n"
@@ -47,13 +51,33 @@ class Prover:
         self.seen.append(list(context.claims))
         claims: list[Claim] = []
         if task.type is TaskType.FORMALIZATION:
-            known = [c for c in context.claims if c.statement == LEMMA
-                     and c.status == ClaimStatus.VERIFIED]  # fmt: skip
-            if not known:
+            recalled = [c for c in context.claims if c.statement == LEMMA and c.origin_run_id]
+            if not recalled:
                 self.proved.append(LEMMA)
-                claims = [Claim(statement=LEMMA, task_id=task.id).transition(ClaimStatus.VERIFIED)]
+                proof = make_evidence(
+                    FormalProofPayload(lean_code="theorem t : True := trivial", theorem_name="t",
+                                       lean_verified=True, equivalent=True),
+                    summary="Lean", source=AgentRole.FORMALIZER,
+                )  # fmt: skip
+                claims = [Claim(statement=LEMMA, task_id=task.id, evidence=[proof])
+                          .transition(ClaimStatus.VERIFIED)]  # fmt: skip
         out = "; ".join(f"{c.statement} [{c.status.value}]" for c in context.claims)
-        return AgentResult(task_id=task.id, role=task.assigned_role, output=out, claims=claims)
+        data: dict[str, object] = {}
+        if task.type is TaskType.SYNTHESIS:
+            # Stand-in for the gate: claims with formal evidence pass; the report is what
+            # memory stores.
+            gated = [c.model_copy(update={"status": ClaimStatus.VERIFIED}) if c.evidence else c
+                     for c in context.claims]  # fmt: skip
+            report = EvidenceReport(
+                problem=context.problem, answer=out,
+                verified=[ReportedClaim(claim=c, decision=GateDecision(claim_id=c.id,
+                                                                       status=c.status))
+                          for c in gated if c.status == ClaimStatus.VERIFIED],
+            )  # fmt: skip
+            data = {"report": report.model_dump(mode="json"), "markdown": ""}
+            claims = gated
+        return AgentResult(task_id=task.id, role=task.assigned_role, output=out, claims=claims,
+                           data=data)  # fmt: skip
 
 
 async def test_second_run_reuses_stored_lemma() -> None:
@@ -83,10 +107,31 @@ async def test_second_run_reuses_stored_lemma() -> None:
     assert second.proved == [], "the lemma was proved again instead of reused"
     reused = [c for c in snap2.values["claims"].values() if c.statement == LEMMA]
     assert len(reused) == 1
-    assert reused[0].origin_run_id == "run_a" and reused[0].status == ClaimStatus.VERIFIED
+    assert reused[0].origin_run_id == "run_a"
+    assert reused[0].evidence and reused[0].evidence[0].kind.value == "formal_proof"
+    # agents received it as *proposed* (with its evidence); only this run's gate re-verified it
+    (seen,) = [c for c in second.seen[0] if c.statement == LEMMA]
+    assert seen.status == ClaimStatus.PROPOSED
+    assert reused[0].status == ClaimStatus.VERIFIED
     # the formalizer saw it on the blackboard, and the recall is an auditable event
     assert any(c.origin_run_id == "run_a" for c in second.seen[0])
     events = await bb2.history("run_b")
     recalls = [e for e in events if e.payload.get("topic") == "memory_recall"]
     assert all(e.kind is EventKind.MESSAGE for e in recalls)
     assert recalls and recalls[0].payload["origin_run_id"] == "run_a"
+
+
+def test_memory_never_stores_verified_without_the_gate() -> None:
+    """Regression: the merged run state never downgrades a claim, so storing it directly let a
+    gate-rejected claim be remembered as verified."""
+    from polymath.core.models import Problem
+
+    sneaky = Claim(statement="x", status=ClaimStatus.VERIFIED)
+    state = {"run_id": "r", "problem": Problem(statement="p"), "claims": {sneaky.id: sneaky}}
+    (stored,) = claims_to_remember(state, None)  # type: ignore[arg-type]
+    assert stored.status == ClaimStatus.PROPOSED
+    gated = sneaky.model_copy(update={"status": ClaimStatus.PROPOSED})
+    report = {"verified": [], "conjectures": [{"claim": gated.model_dump(mode="json")}],
+              "refuted": []}  # fmt: skip
+    (from_report,) = claims_to_remember(state, report)  # type: ignore[arg-type]
+    assert from_report.status == ClaimStatus.PROPOSED

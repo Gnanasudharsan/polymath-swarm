@@ -14,6 +14,7 @@ from polymath.core.budget import BudgetExceededError
 from polymath.core.logging import get_logger
 from polymath.core.models import (
     Claim,
+    ClaimStatus,
     EventKind,
     Problem,
     Task,
@@ -107,10 +108,21 @@ async def _recall(state: SwarmState, ctx: RunContext, problem: Problem) -> dict[
     except Exception as exc:  # memory is an optimisation; never fail a run over it
         log.warning("graph.recall_failed", error=str(exc))
         return {}
-    recalled = {}
+    recalled: dict[str, Claim] = {}
+    seen: set[str] = set()
     for stored, sim in hits:
+        key = " ".join(stored.claim.statement.lower().split())
+        if key in seen:
+            continue
+        seen.add(key)
+        # Recalled claims start as *proposed*: only this run's gate can make them verified.
         claim = stored.claim.model_copy(
-            update={"id": new_id("claim"), "origin_run_id": stored.run_id, "task_id": None}
+            update={
+                "id": new_id("claim"),
+                "origin_run_id": stored.run_id,
+                "task_id": None,
+                "status": ClaimStatus.PROPOSED,
+            }
         )
         recalled[claim.id] = claim
         await ctx.blackboard.post(
@@ -317,7 +329,7 @@ async def finalize(state: SwarmState, runtime: Runtime[RunContext]) -> dict[str,
         try:
             await ctx.memory.record_run(
                 run_id, state["problem"], status.value, update.get("answer", ""),
-                list((state.get("claims") or {}).values()), update.get("report"),
+                claims_to_remember(state, update.get("report")), update.get("report"),
             )  # fmt: skip
         except Exception as exc:
             log.warning("graph.memory_record_failed", error=str(exc))
@@ -328,6 +340,20 @@ async def finalize(state: SwarmState, runtime: Runtime[RunContext]) -> dict[str,
         stop_reason=update.get("stop_reason", state.get("stop_reason", "")),
     )
     return update
+
+
+def claims_to_remember(state: SwarmState, report: dict[str, Any] | None) -> list[Claim]:
+    """Only the gate decides what is verified. With a report, store the gate's verdicts; without
+    one, nothing counts as verified (the merged run state never downgrades a claim)."""
+    if report:
+        buckets = ("verified", "conjectures", "refuted")
+        return [Claim.model_validate(rc["claim"]) for b in buckets for rc in report.get(b, [])]
+    return [
+        c.model_copy(update={"status": ClaimStatus.PROPOSED})
+        if c.status == ClaimStatus.VERIFIED
+        else c
+        for c in (state.get("claims") or {}).values()
+    ]
 
 
 def _report(

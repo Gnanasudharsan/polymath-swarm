@@ -69,9 +69,16 @@ async def test_related_problem_reuses_lemma_from_postgres_memory(infra_settings:
         first, second = Prover(), Prover()
         snap1 = await run("Prove that for every natural number n, n(n+1) is even.", first)
         snap2 = await run("Prove that for every natural number n, n(n+1)(n+2) is even.", second)
+        # don't leave fake test claims in the shared memory
+        async with await psycopg.AsyncConnection.connect(s.postgres_dsn) as conn:
+            for rid in (snap1.run_id, snap2.run_id):
+                await conn.execute("DELETE FROM polymath_claims WHERE run_id = %s", (rid,))
+                await conn.execute("DELETE FROM polymath_runs WHERE run_id = %s", (rid,))
+            await conn.commit()
     assert first.proved == [LEMMA] and second.proved == []
     reused = [c for c in snap2.values["claims"].values() if c.statement == LEMMA]
     assert reused and reused[0].origin_run_id == snap1.run_id
+    assert reused[0].evidence  # carried over, and re-verified by this run's gate stand-in
     assert reused[0].status == ClaimStatus.VERIFIED
 
 

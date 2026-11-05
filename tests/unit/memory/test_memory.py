@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from polymath.core.models import Claim, ClaimStatus, Problem
+from polymath.core.models import AgentRole, Claim, ClaimStatus, Problem
 from polymath.memory.embeddings import HashEmbedder
 from polymath.memory.episodic import EpisodicMemory
 from polymath.memory.evaluation import evaluate, index_corpus, load_dataset
@@ -13,6 +13,7 @@ from polymath.memory.inmemory import InMemoryKnowledgeStore, bm25_scores
 from polymath.memory.models import ChunkRecord, PaperRecord, ScoredChunk
 from polymath.memory.retrieval import HybridRetriever, rrf
 from polymath.memory.text import Page, chunk_pages, chunk_text, clean
+from polymath.verification.evidence import ComputationPayload, CritiquePayload, make_evidence
 
 
 def test_clean_joins_hyphenated_line_breaks() -> None:
@@ -92,12 +93,19 @@ async def test_ingest_is_idempotent_and_puts_abstract_first() -> None:
 async def test_episodic_recall_returns_only_relevant_verified_claims() -> None:
     store, emb = InMemoryKnowledgeStore(), HashEmbedder()
     mem = EpisodicMemory(store, emb, min_similarity=0.3)
+    proof = make_evidence(ComputationPayload(code="print(1)", outcome="pass"), summary="",
+                          source=AgentRole.COMPUTE)  # fmt: skip
+    review = make_evidence(CritiquePayload(verdict="accept", rationale="ok"), summary="",
+                           source=AgentRole.CRITIC)  # fmt: skip
     lemma = Claim(statement="n(n+1) is even for every natural number n",
-                  status=ClaimStatus.VERIFIED)  # fmt: skip
+                  status=ClaimStatus.VERIFIED, evidence=[proof])  # fmt: skip
+    say_so = Claim(statement="n(n+1) is even for each natural n, trust me",
+                   status=ClaimStatus.VERIFIED, evidence=[review])  # fmt: skip
     hunch = Claim(statement="n(n+1) is a perfect square for every natural number n")
-    other = Claim(statement="The Transformer relies on self-attention", status=ClaimStatus.VERIFIED)
+    other = Claim(statement="The Transformer relies on self-attention", status=ClaimStatus.VERIFIED,
+                  evidence=[proof])  # fmt: skip
     await mem.record_run("run_1", Problem(statement="Is n(n+1) even?"), "completed", "yes",
-                         [lemma, hunch, other])  # fmt: skip
+                         [lemma, say_so, hunch, other])  # fmt: skip
     hits = await mem.reusable_claims(Problem(statement="Prove n(n+1)(n+2) is even for natural n"))
     assert [sc.claim.id for sc, _ in hits] == [lemma.id]
     assert hits[0][0].run_id == "run_1"
