@@ -96,5 +96,11 @@ def ask(
     )
 
 
+# Swarm commands live in their own module to keep this file small.
+from polymath.cli_swarm import register  # noqa: E402
+
+register(app)
+
+
 if __name__ == "__main__":  # pragma: no cover
     app()

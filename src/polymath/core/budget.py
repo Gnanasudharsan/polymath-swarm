@@ -46,6 +46,15 @@ class BudgetTracker:
         self.tokens_used += tokens
         self.usd_used += usd
 
+    def restore(
+        self, *, tokens_used: int, usd_used: float, iterations: int, elapsed_s: float
+    ) -> None:
+        """Rehydrate usage from a checkpoint so resumed runs keep counting where they left off."""
+        self.tokens_used = tokens_used
+        self.usd_used = usd_used
+        self.iterations = iterations
+        self._started_at = self.clock() - elapsed_s
+
     def tick(self) -> None:
         """Count one supervisor iteration."""
         self.iterations += 1
