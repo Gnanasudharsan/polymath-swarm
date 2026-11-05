@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Sequence
 from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
-from polymath.core.config import Settings
+from polymath.core.config import Settings, get_settings
 
 
 def fake_response(
@@ -57,8 +58,30 @@ class FakeCompletion:
         return [c["model"] for c in self.calls]
 
 
+@pytest.fixture(autouse=True)
+def _isolate_env(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Non-live tests never see local POLYMATH_* settings (model profile, spend ledger...),
+    so fake LLM calls can't touch the real spend ledger. Live tests load .env themselves."""
+    if request.node.get_closest_marker("live"):
+        return
+    for key in [k for k in os.environ if k.startswith("POLYMATH_")]:
+        monkeypatch.delenv(key)
+    monkeypatch.setenv("POLYMATH_NO_DOTENV", "1")
+    monkeypatch.chdir(request.config.rootpath)  # keep relative paths predictable
+    get_settings.cache_clear()
+
+
 async def no_sleep(_seconds: float) -> None:
     return None
+
+
+@pytest.fixture
+def infra_settings() -> Settings:
+    """Plain settings for Docker-backed tests, built after env isolation.
+
+    (Never build Settings at module import: LiteLLM loads .env into os.environ when imported.)
+    """
+    return Settings(_env_file=None)  # type: ignore[call-arg]
 
 
 @pytest.fixture

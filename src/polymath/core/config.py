@@ -6,6 +6,7 @@ LiteLLM reads them from the process environment, which :func:`load_env_file` pop
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal, Self
@@ -135,10 +136,18 @@ class Settings(BaseSettings):
 
 
 def load_env_file(path: Path | None = None) -> None:
-    """Load ``.env`` into ``os.environ`` (without overriding real env vars) for provider SDKs."""
+    """Load ``.env`` into ``os.environ`` (without overriding real env vars) for provider SDKs.
+
+    Set ``POLYMATH_NO_DOTENV=1`` to skip it (the test suite does, so local settings such as the
+    spend ledger never leak into tests).
+    """
+    if os.environ.get("POLYMATH_NO_DOTENV") == "1":
+        return
     load_dotenv(dotenv_path=path or Path(".env"), override=False)
 
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
+    if os.environ.get("POLYMATH_NO_DOTENV") == "1":
+        return Settings(_env_file=None)
     return Settings()

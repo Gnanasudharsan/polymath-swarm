@@ -74,6 +74,9 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 - LangGraph restores top-level TypedDict enum fields from Postgres as plain `str`: compare by value
   (`==`), never `is`. Nested Pydantic fields come back as real enums.
 - `graph.add_node(..., input_schema=TaskInput)` needs a `type: ignore[call-overload]` (LangGraph typing).
+- **LiteLLM calls `load_dotenv()` on import**, so `.env` values (model profile, spend ledger) enter
+  `os.environ`. `tests/conftest.py` strips `POLYMATH_*` per test and sets `POLYMATH_NO_DOTENV=1`;
+  never build `Settings` at test-module import time (use the `settings`/`infra_settings` fixtures).
 - zsh: don't put a command in a variable (`$R`) — it won't word-split; use a function.
 
 ## Architecture (target)
