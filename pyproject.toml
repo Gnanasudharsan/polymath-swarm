@@ -39,6 +39,7 @@ polymath = "polymath.cli:app"
 [dependency-groups]
 dev = [
     "fakeredis==2.40.0",
+    "matplotlib==3.11.2",
     "mypy==2.4.1",
     "pre-commit==4.7.0",
     "pytest==9.2.0",

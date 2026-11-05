@@ -36,3 +36,6 @@ evals/reports/raw/
 
 # Evidence reports from local runs (examples/ keeps committed ones)
 reports/
+
+# Downloaded benchmark data (not redistributed)
+evals/datasets/cache/
