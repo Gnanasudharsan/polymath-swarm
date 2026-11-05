@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Literal
 
 from dotenv import load_dotenv
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from polymath.core.models import AgentRole, RunBudget
@@ -52,6 +52,18 @@ class Settings(BaseSettings):
     llm_max_retries: int = Field(default=3, ge=0)
     llm_retry_base_delay_s: float = Field(default=1.0, ge=0)
     llm_max_output_tokens: int = Field(default=8192, gt=0)
+
+    # Literature APIs (unprefixed env names, matching each provider's docs)
+    semantic_scholar_api_key: SecretStr | None = Field(
+        default=None, validation_alias="SEMANTIC_SCHOLAR_API_KEY"
+    )
+    openalex_mailto: str | None = Field(default=None, validation_alias="OPENALEX_MAILTO")
+    openalex_api_key: SecretStr | None = Field(default=None, validation_alias="OPENALEX_API_KEY")
+    literature_cache_ttl_s: int = Field(default=86_400, gt=0)
+
+    # Docker images for tool servers
+    sandbox_image: str = "polymath-sandbox:latest"
+    lean_image: str = "polymath-lean:v4.35.0"
 
     # Default budget for a run
     budget: RunBudget = Field(default_factory=RunBudget)
