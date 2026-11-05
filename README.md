@@ -9,7 +9,7 @@ computation, formal verification, critique, synthesis) collaborate through a sha
 Every claim in the final answer carries evidence: a verified citation, a reproduced computation,
 or a Lean 4 proof that compiles with zero `sorry`.
 
-> **Status:** early development — Phase 2 (MCP tool layer) complete. See [PROGRESS.md](PROGRESS.md).
+> **Status:** early development — Phase 3 (orchestration) complete. See [PROGRESS.md](PROGRESS.md).
 
 ## Architecture
 
@@ -66,6 +66,26 @@ to cap spend, `--json` for machine-readable output). Claims it prints are *propo
 verification pipeline arrives in later phases.
 
 Postgres is exposed on host port **5544** and Redis on **6379**.
+
+### Running the swarm
+
+```bash
+uv run polymath solve "Show that the product of two consecutive integers is even." --approve-plan
+```
+
+The supervisor plans a task DAG, you approve or give feedback, independent tasks run in parallel,
+and every step is checkpointed in Postgres. Then you can:
+
+```bash
+uv run polymath resume <run_id>
+```
+
+```bash
+uv run polymath trace <run_id> -o trace.json
+```
+
+Use `--memory` to run without Postgres/Redis. Specialist agents arrive in Phase 4; until then
+every role is served by the Reasoner.
 
 ### Tool servers (MCP)
 

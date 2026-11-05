@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow SemVer.
 
+## [0.3.0] - 2026-11-05
+
+### Added
+- LangGraph orchestration: planner, parallel dispatch, plan approval, budget termination, finalize.
+- Postgres checkpointer with deserialisation allowlist; resumable runs (`polymath resume`).
+- Blackboard with Postgres persistence and Redis pub/sub.
+- Run trace export (`polymath trace`), `polymath solve`, `polymath graph`; ADR-0005.
+
+### Fixed
+- Run status checks after a Postgres restore (enum fields come back as strings).
+
 ## [0.2.0] - 2026-11-05
 
 ### Added

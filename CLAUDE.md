@@ -9,8 +9,9 @@ Formalizer, Critic, Synthesizer) collaborate through a shared blackboard. Every 
 answer must carry evidence: a verified citation, a reproduced computation, or a Lean 4 proof with 0 `sorry`.
 
 ## Current phase
-- Done: Phase 0 (v0.0.0), Phase 1 core runtime (v0.1.0), Phase 2 MCP tool layer (v0.2.0)
-- Next: Phase 3 — Orchestration (`phase-3-orchestration`)
+- Done: Phase 0 (v0.0.0), Phase 1 core runtime (v0.1.0), Phase 2 MCP tools (v0.2.0),
+  Phase 3 orchestration (v0.3.0)
+- Next: Phase 4 — Specialists & verification loop. **Ask the user before starting** (cost/infra).
 
 ## What exists (Phase 1)
 - `core/models.py` — all domain models; `TaskGraph` validates deps + cycles (Kahn), `ready_tasks()`;
@@ -45,6 +46,21 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 - Markers: `integration` ⊃ {`network` (public APIs), `lean`}. CI runs
   `integration and not lean and not network`; `lean.yml` is manual.
 
+## What exists (Phase 3)
+- `graph/builder.py` — `compile_graph(checkpointer)`; nodes in `graph/nodes.py`
+  (plan → approve → dispatch ⇄ execute_task via `Send` → finalize). `mermaid()` → docs/diagrams.
+- `graph/state.py` — `SwarmState` (checkpointed), `RunStatus`, `Usage`, `task_outcomes`, `ready_task_ids`.
+- `graph/context.py` — `RunContext` (planner, executors, blackboard, BudgetTracker; not checkpointed).
+- `graph/planner.py` — `LLMPlanner` (prompt `planner.v1.md`), `to_task_graph` validation, `default_plan`.
+- `graph/runner.py` — `SwarmRunner.start/resume/snapshot/export_trace`; `run_id` = thread id.
+- `graph/checkpointer.py` — serde with msgpack allowlist; `postgres_checkpointer`, `memory_checkpointer`.
+- `graph/infra.py` — `swarm_infra(settings, in_memory=)` → checkpointer + `Blackboard`.
+- `blackboard/` — `Blackboard.post/publish/history/subscribe`; `PostgresEventStore` (`polymath_events`).
+- `agents/registry.py` — `default_executors(gateway)` (all roles → Reasoner until Phase 4).
+- CLI (`cli_swarm.py`): `polymath solve "..." [--approve-plan] [--memory]`, `resume RUN_ID
+  [--approve/--reject/--feedback]`, `trace RUN_ID -o f.json`, `graph`.
+- Test fakes: `tests/swarm_fakes.py` (FixedPlanner, FakeExecutor, make_factory, run_in_child).
+
 ## Gotchas
 - Claude 5.x rejects sampling params → gateway always passes `drop_params=True`.
 - Catch `openai.OpenAIError` (not `litellm.exceptions.OpenAIError`) as the base of LiteLLM API errors.
@@ -55,6 +71,9 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 - Module-scoped async fixtures need `@pytest_asyncio.fixture(scope="module", loop_scope="module")`
   and `pytest.mark.asyncio(loop_scope="module")` on the tests.
 - Semantic Scholar throttles unauthenticated IPs hard (429); set `SEMANTIC_SCHOLAR_API_KEY`.
+- LangGraph restores top-level TypedDict enum fields from Postgres as plain `str`: compare by value
+  (`==`), never `is`. Nested Pydantic fields come back as real enums.
+- `graph.add_node(..., input_schema=TaskInput)` needs a `type: ignore[call-overload]` (LangGraph typing).
 - zsh: don't put a command in a variable (`$R`) — it won't word-split; use a function.
 
 ## Architecture (target)
