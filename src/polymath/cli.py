@@ -15,7 +15,8 @@ from polymath.core.budget import BudgetExceededError, BudgetTracker
 from polymath.core.config import Settings, get_settings, load_env_file
 from polymath.core.logging import configure_logging
 from polymath.core.models import AgentRole, Problem, RunBudget, Task, TaskType
-from polymath.core.tracing import setup_tracing, shutdown_tracing
+from polymath.core.tracing import setup_tracing_from_settings as setup_tracing
+from polymath.core.tracing import shutdown_tracing
 from polymath.llm.cost import CostSummary, CostTracker
 from polymath.llm.gateway import LLMError, LLMGateway
 from polymath.llm.structured import StructuredOutputError
@@ -65,11 +66,7 @@ def ask(
     load_env_file()
     settings = get_settings()
     configure_logging(settings.log_level, json=settings.log_json)
-    setup_tracing(
-        service_name=settings.otel_service_name,
-        otlp_endpoint=settings.otel_exporter_endpoint,
-        console=settings.otel_console,
-    )
+    setup_tracing(settings)
     budget = settings.budget.model_copy(update={"max_usd": max_usd})
     try:
         result, cost = asyncio.run(ask_reasoner(question, settings, budget, model))

@@ -43,6 +43,12 @@ TRANSIENT_ERRORS: tuple[type[Exception], ...] = (
 )
 
 
+def _preview(messages: list[Message], limit: int = 4000) -> str:
+    """Last user message, truncated — enough to debug a trace without storing whole prompts."""
+    users = [m for m in messages if m.get("role") == "user"]
+    return str(users[-1].get("content", ""))[:limit] if users else ""
+
+
 class LLMError(RuntimeError):
     """All models in the chain failed."""
 
@@ -131,6 +137,10 @@ class LLMGateway:
                 span.set_attribute("gen_ai.usage.input_tokens", result.usage.prompt_tokens)
                 span.set_attribute("gen_ai.usage.output_tokens", result.usage.completion_tokens)
                 span.set_attribute("polymath.cost.usd", result.usage.usd)
+                span.set_attribute("gen_ai.usage.cost", result.usage.usd)
+                span.set_attribute("langfuse.observation.type", "generation")
+                span.set_attribute("langfuse.observation.input", _preview(messages))
+                span.set_attribute("langfuse.observation.output", result.content[:4000])
                 return result
 
         raise LLMError("all models failed: " + "; ".join(errors))

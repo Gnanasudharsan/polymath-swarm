@@ -14,6 +14,7 @@ from opentelemetry.sdk.trace.export import (
 )
 
 from polymath import __version__
+from polymath.core.config import Settings
 
 TRACER_NAME = "polymath"
 
@@ -24,6 +25,7 @@ def setup_tracing(
     *,
     service_name: str = "polymath",
     otlp_endpoint: str | None = None,
+    otlp_headers: dict[str, str] | None = None,
     console: bool = False,
     exporter: SpanExporter | None = None,
 ) -> TracerProvider:
@@ -41,12 +43,28 @@ def setup_tracing(
     if exporter is not None:
         provider.add_span_processor(SimpleSpanProcessor(exporter))
     if otlp_endpoint:
-        provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(endpoint=otlp_endpoint)))
+        exporter_ = OTLPSpanExporter(endpoint=otlp_endpoint, headers=otlp_headers or {})
+        provider.add_span_processor(BatchSpanProcessor(exporter_))
     if console:
         provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
     trace.set_tracer_provider(provider)
     _provider = provider
     return provider
+
+
+def setup_tracing_from_settings(settings: Settings) -> TracerProvider:
+    endpoint, headers = settings.otlp_target()
+    return setup_tracing(
+        service_name=settings.otel_service_name,
+        otlp_endpoint=endpoint,
+        otlp_headers=headers,
+        console=settings.otel_console,
+    )
+
+
+def flush_tracing() -> None:
+    if _provider is not None:
+        _provider.force_flush()
 
 
 def shutdown_tracing() -> None:

@@ -104,4 +104,5 @@ markers = [
     "live: calls real paid LLM APIs (run with -m live)",
     "network: calls free public APIs that may rate-limit (subset of integration)",
     "lean: needs the multi-GB Lean + Mathlib image (subset of integration)",
+    "observability: needs the Langfuse stack (compose profile 'observability')",
 ]

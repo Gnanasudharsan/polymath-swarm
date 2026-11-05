@@ -55,6 +55,141 @@ services:
     network_mode: none
     entrypoint: ["true"]
 
+  # ---------------------------------------------------------------- observability (profile)
+  # Self-hosted Langfuse v4 (adapted from langfuse/langfuse v4.76.0 docker-compose.yml) with its
+  # own Postgres, Redis, ClickHouse and MinIO. Start with:
+  #   docker compose --profile observability up -d --wait
+  # UI: http://localhost:3000  (login: LANGFUSE_INIT_USER_* below). Local-only credentials.
+  lf-worker:
+    profiles: ["observability"]
+    image: langfuse/langfuse-worker:4.76.0
+    restart: unless-stopped
+    depends_on: &lf-depends
+      lf-postgres: {condition: service_healthy}
+      lf-minio: {condition: service_healthy}
+      lf-redis: {condition: service_healthy}
+      lf-clickhouse: {condition: service_healthy}
+    environment: &lf-env
+      NEXTAUTH_URL: http://localhost:3000
+      DATABASE_URL: postgresql://postgres:${LANGFUSE_DB_PASSWORD:-langfuse-local}@lf-postgres:5432/postgres
+      SALT: ${LANGFUSE_SALT:-polymath-local-salt}
+      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-0000000000000000000000000000000000000000000000000000000000000000}
+      TELEMETRY_ENABLED: "false"
+      CLICKHOUSE_MIGRATION_URL: clickhouse://lf-clickhouse:9000
+      CLICKHOUSE_URL: http://lf-clickhouse:8123
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:-langfuse-local}
+      CLICKHOUSE_CLUSTER_ENABLED: "false"
+      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: minio
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_PASSWORD:-langfuse-local}
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://lf-minio:9000
+      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
+      LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
+      LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: minio
+      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_PASSWORD:-langfuse-local}
+      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://lf-minio:9000
+      LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
+      REDIS_HOST: lf-redis
+      REDIS_PORT: "6379"
+      REDIS_AUTH: ${LANGFUSE_REDIS_PASSWORD:-langfuse-local}
+
+  lf-web:
+    profiles: ["observability"]
+    image: langfuse/langfuse:4.76.0
+    restart: unless-stopped
+    depends_on: *lf-depends
+    ports:
+      - "${LANGFUSE_PORT:-3000}:3000"
+    environment:
+      <<: *lf-env
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-polymath-local-nextauth}
+      # Headless init: org, project and API keys exist on first boot (local dev values).
+      LANGFUSE_INIT_ORG_ID: polymath
+      LANGFUSE_INIT_ORG_NAME: Polymath
+      LANGFUSE_INIT_PROJECT_ID: polymath-swarm
+      LANGFUSE_INIT_PROJECT_NAME: polymath-swarm
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-polymath-local}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-polymath-local}
+      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL:-admin@polymath.local}
+      LANGFUSE_INIT_USER_NAME: admin
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:-polymath-local}
+
+  lf-clickhouse:
+    profiles: ["observability"]
+    image: clickhouse/clickhouse-server:26.3.62.3
+    restart: unless-stopped
+    user: "101:101"
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:-langfuse-local}
+    volumes:
+      - lf_clickhouse:/var/lib/clickhouse
+      - lf_clickhouse_logs:/var/log/clickhouse-server
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  lf-minio:
+    profiles: ["observability"]
+    image: cgr.dev/chainguard/minio@sha256:cee9a8e35885e93f14b3cb32960e5017aff74e2adfb52ba87c65003b0163886b
+    restart: unless-stopped
+    entrypoint: sh
+    command: -c 'mkdir -p /data/langfuse && minio server --address ":9000" --console-address ":9001" /data'
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: ${LANGFUSE_MINIO_PASSWORD:-langfuse-local}
+    volumes:
+      - lf_minio:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+
+  lf-redis:
+    profiles: ["observability"]
+    image: redis:7.4.12-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${LANGFUSE_REDIS_PASSWORD:-langfuse-local}", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - lf_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${LANGFUSE_REDIS_PASSWORD:-langfuse-local}", "ping"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+
+  lf-postgres:
+    profiles: ["observability"]
+    image: postgres:17.11-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${LANGFUSE_DB_PASSWORD:-langfuse-local}
+      POSTGRES_DB: postgres
+      TZ: UTC
+      PGTZ: UTC
+    volumes:
+      - lf_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
 volumes:
   pgdata:
   redisdata:
+  lf_clickhouse:
+  lf_clickhouse_logs:
+  lf_minio:
+  lf_redis:
+  lf_postgres:

@@ -41,7 +41,7 @@ def mocked(monkeypatch: pytest.MonkeyPatch) -> None:
         return await real(**kwargs, mock_response=reply)
 
     monkeypatch.setattr(litellm, "acompletion", fake)
-    monkeypatch.setattr(cli_swarm, "setup_tracing", lambda **_: None)
+    monkeypatch.setattr(cli_swarm, "setup_tracing", lambda *_, **__: None)
     monkeypatch.setattr(cli_swarm, "shutdown_tracing", lambda: None)
 
 

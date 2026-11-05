@@ -8,6 +8,7 @@ from typing import Any, Final, Literal, TypedDict
 from langgraph.graph import END
 from langgraph.runtime import Runtime
 from langgraph.types import Command, Send, interrupt
+from opentelemetry import trace
 
 from polymath.agents.base import AgentContext, AgentResult
 from polymath.core.budget import BudgetExceededError
@@ -22,6 +23,7 @@ from polymath.core.models import (
     TaskType,
     new_id,
 )
+from polymath.core.tracing import get_tracer
 from polymath.graph.context import RunContext
 from polymath.graph.revision import add_revision_round, is_optional, triggering_claims
 from polymath.graph.state import (
@@ -264,7 +266,14 @@ async def execute_task(payload: TaskInput, runtime: Runtime[RunContext]) -> dict
         notes="\n\n".join(f"### Output of `{tid}`\n{r.output}" for tid, r in deps.items()),
     )
     timeout = ctx.timeout_for(task)
-    with usage_scope() as spent:
+    span = get_tracer().start_span(
+        f"agent.{task.assigned_role.value}",
+        attributes={"polymath.task.id": task.id, "polymath.task.type": task.type.value,
+                    "polymath.agent.role": task.assigned_role.value,
+                    "langfuse.observation.type": "agent",
+                    "langfuse.observation.input": task.description[:2000]},
+    )  # fmt: skip
+    with trace.use_span(span, end_on_exit=True), usage_scope() as spent:
         try:
             executor = ctx.executor_for(task.assigned_role)
             result = await asyncio.wait_for(executor.run(task, agent_ctx), timeout)
@@ -275,6 +284,8 @@ async def execute_task(payload: TaskInput, runtime: Runtime[RunContext]) -> dict
         except Exception as exc:
             log.exception("graph.task_failed", run_id=run_id, task_id=task.id)
             result = _failed(task, f"{type(exc).__name__}: {exc}")
+        span.set_attribute("polymath.task.success", result.success)
+        span.set_attribute("langfuse.observation.output", result.output[:4000])
     if spent:
         # The gateway saw every call, including those of a task that failed or timed out.
         result = result.model_copy(update={"usage": list(spent)})
