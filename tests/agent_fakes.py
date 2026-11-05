@@ -13,9 +13,11 @@ from typing import Any
 from polymath.agents.tools import ToolCallError
 from polymath.core.config import Settings
 from polymath.llm.gateway import LLMGateway
+from polymath.mcp_servers.knowledge.server import PaperText, SearchResult
 from polymath.mcp_servers.lean.checker import Diagnostic, LeanCheckResult, LeanVerification
 from polymath.mcp_servers.literature.models import Paper, PaperList
 from polymath.mcp_servers.sandbox.docker import SandboxResult
+from polymath.memory.models import ChunkRecord, PaperRecord, ScoredChunk
 from tests.conftest import FakeCompletion, no_sleep
 
 
@@ -39,6 +41,9 @@ class FakeTools:
     programs: list[str] = field(default_factory=list)
     lean_calls: list[tuple[str, str]] = field(default_factory=list)
     lean_fn: Callable[[str], LeanVerification] | None = None  # decide by code instead of a script
+    full_texts: dict[str, str] = field(default_factory=dict)  # "arxiv:<base id>" -> text
+    ingested: list[str] = field(default_factory=list)
+    stored: set[str] = field(default_factory=set)
 
     async def run_python(self, code: str, timeout_s: float = 30.0) -> SandboxResult:
         self.programs.append(code)
@@ -74,6 +79,28 @@ class FakeTools:
         if not self.lean_results:
             raise ToolCallError("no scripted Lean result")
         return self.lean_results.pop(0) if len(self.lean_results) > 1 else self.lean_results[0]
+
+    @property
+    def has_knowledge(self) -> bool:
+        return bool(self.full_texts)
+
+    async def search_knowledge(self, query: str, k: int = 8) -> SearchResult:
+        hits = [
+            ScoredChunk(chunk=ChunkRecord(id=f"{key}#1", paper_key=key, ord=1, page=3, text=text),
+                        score=1.0, sources=["fake"])
+            for key, text in self.full_texts.items() if key in self.stored
+        ]  # fmt: skip
+        return SearchResult(query=query, hits=hits[:k])
+
+    async def ingest_arxiv(self, arxiv_id: str) -> PaperRecord:
+        key = f"arxiv:{arxiv_id.split('v')[0]}"
+        self.ingested.append(arxiv_id)
+        self.stored.add(key)
+        return PaperRecord(key=key, title=key)
+
+    async def paper_text(self, paper_key: str) -> PaperText:
+        text = self.full_texts.get(paper_key, "") if paper_key in self.stored else ""
+        return PaperText(paper=None, text=text)
 
 
 def gateway(settings: Settings, replies: list[Any]) -> tuple[LLMGateway, FakeCompletion]:

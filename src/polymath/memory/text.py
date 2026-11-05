@@ -12,6 +12,9 @@ _HYPHEN_BREAK = re.compile(r"(\w)-\n(\w)")
 _SPACES = re.compile(r"[ \t\f\v]+")
 _MANY_NEWLINES = re.compile(r"\n{3,}")
 _SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
+# NUL and other C0 control characters (except tab/newline) appear in real PDF extractions and
+# are rejected by Postgres text columns.
+_CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
 
 class Page(BaseModel):
@@ -30,6 +33,7 @@ class TextChunk(BaseModel):
 
 
 def clean(text: str) -> str:
+    text = _CONTROL.sub("", text)
     text = _HYPHEN_BREAK.sub(r"\1\2", text.replace("\r", "\n"))
     text = _SPACES.sub(" ", text)
     return _MANY_NEWLINES.sub("\n\n", text).strip()
