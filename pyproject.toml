@@ -1,6 +1,6 @@
 [project]
 name = "polymath"
-version = "0.1.0"
+version = "0.2.0"
 description = "Verification-first multi-agent swarm for research and mathematics (LangGraph + MCP + A2A + Lean 4)"
 readme = "README.md"
 license = "MIT"
@@ -8,8 +8,10 @@ license-files = ["LICENSE"]
 authors = [{ name = "Gnanasudharsan Ashokumar" }]
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "defusedxml==0.7.1",
     "httpx==0.28.1",
     "litellm==1.108.0",
+    "mcp==2.3.0",
     "openai==3.45.0",
     "opentelemetry-api==1.45.2",
     "opentelemetry-exporter-otlp-proto-http==1.45.2",
@@ -20,6 +22,7 @@ dependencies = [
     "python-dotenv==1.2.4",
     "redis==8.1.0",
     "structlog==26.1.0",
+    "sympy==1.14.0",
     "typer==0.27.3",
 ]
 
@@ -28,6 +31,7 @@ polymath = "polymath.cli:app"
 
 [dependency-groups]
 dev = [
+    "fakeredis==2.40.0",
     "mypy==2.4.1",
     "pre-commit==4.7.0",
     "pytest==9.2.0",
@@ -52,9 +56,11 @@ extend-exclude = ["frontend"]
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP", "N", "SIM", "RUF", "ASYNC", "S", "PTH"]
 ignore = []
+# Lean source uses these math letters on purpose.
+allowed-confusables = ["ℝ", "ℕ", "ℤ", "ℚ", "ℂ"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101"]
+"tests/**" = ["S101", "S108"]
 "evals/**" = ["S101"]
 
 # ---------------------------------------------------------------- mypy
@@ -64,6 +70,11 @@ strict = true
 files = ["src"]
 plugins = ["pydantic.mypy"]
 warn_unreachable = true
+
+[[tool.mypy.overrides]]
+# Third-party packages without type information.
+module = ["sympy", "sympy.*", "defusedxml", "defusedxml.*"]
+ignore_missing_imports = true
 
 [tool.pydantic-mypy]
 init_forbid_extra = true
@@ -84,4 +95,6 @@ filterwarnings = [
 markers = [
     "integration: needs Docker-backed services (run with -m integration)",
     "live: calls real paid LLM APIs (run with -m live)",
+    "network: calls free public APIs that may rate-limit (subset of integration)",
+    "lean: needs the multi-GB Lean + Mathlib image (subset of integration)",
 ]

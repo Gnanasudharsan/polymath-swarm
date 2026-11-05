@@ -38,7 +38,10 @@ jobs:
           enable-cache: true
       - run: uv sync --locked
       - run: docker compose up -d --wait
-      - run: uv run pytest -m integration -q
+      - run: docker compose --profile tools build sandbox
+      # Lean (multi-GB Mathlib image) runs in lean.yml; public-API tests are skipped
+      # because shared runner IPs are rate-limited.
+      - run: uv run pytest -m "integration and not lean and not network" -q
       - if: failure()
         run: docker compose logs
       - if: always()

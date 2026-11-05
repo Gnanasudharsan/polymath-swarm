@@ -1,5 +1,7 @@
 # Dev infrastructure for Polymath Swarm.
-# Phase 0: Postgres 16 + pgvector, Redis. Later phases add langfuse, sandbox, lean, api.
+# Core services: Postgres 16 + pgvector, Redis.
+# Tool images (profile `tools`): `docker compose --profile tools build` builds the sandbox
+# and Lean images; the MCP servers start their own throwaway containers from them.
 name: polymath
 
 services:
@@ -34,6 +36,24 @@ services:
       timeout: 3s
       retries: 20
     restart: unless-stopped
+
+  sandbox:
+    profiles: ["tools"]
+    image: polymath-sandbox:latest
+    build:
+      context: ./docker/sandbox
+      dockerfile: ../sandbox.Dockerfile
+    network_mode: none
+    entrypoint: ["true"]
+
+  lean:
+    profiles: ["tools"]
+    image: polymath-lean:v4.35.0
+    build:
+      context: ./docker/lean
+      dockerfile: ../lean.Dockerfile
+    network_mode: none
+    entrypoint: ["true"]
 
 volumes:
   pgdata:

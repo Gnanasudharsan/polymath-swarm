@@ -9,8 +9,8 @@ Formalizer, Critic, Synthesizer) collaborate through a shared blackboard. Every 
 answer must carry evidence: a verified citation, a reproduced computation, or a Lean 4 proof with 0 `sorry`.
 
 ## Current phase
-- Done: Phase 0 (v0.0.0), Phase 1 — Core runtime & LLM gateway (v0.1.0)
-- Next: Phase 2 — MCP tool layer (`phase-2-mcp-tools`)
+- Done: Phase 0 (v0.0.0), Phase 1 core runtime (v0.1.0), Phase 2 MCP tool layer (v0.2.0)
+- Next: Phase 3 — Orchestration (`phase-3-orchestration`)
 
 ## What exists (Phase 1)
 - `core/models.py` — all domain models; `TaskGraph` validates deps + cycles (Kahn), `ready_tasks()`;
@@ -29,11 +29,33 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 - Tests: fake completion in `tests/conftest.py` (`FakeCompletion`, `settings` fixture).
   Live tests pick Claude Haiku if `ANTHROPIC_API_KEY` else `gpt-5-mini` (dev machine has only OpenAI key).
 
+## What exists (Phase 2)
+- `mcp_servers/client.py` — `MCPToolbox({"name": MCPServer | StdioServerParameters})`: async ctx mgr,
+  `.tools` (ToolSpec, `server.tool`), `.litellm_tools()` (`server__tool`), `.call(name, args)` →
+  `ToolCallResult(structured, text, is_error)`. `stdio_server("sympy")` spawns our server modules.
+- Each server: `polymath.mcp_servers.<name>.build_server(...)` (inject deps in tests) + `python -m ...`.
+  Raise `ToolError` for user-facing failures (other exceptions are masked by the SDK).
+- `sympy/` — ops.py (screened `parse`, pure ops) run in a spawn child with timeout (runner.py).
+- `sandbox/` — `DockerSandbox.run(code, timeout_s)` → `SandboxResult`; image `polymath-sandbox:latest`.
+- `literature/` — `create_literature(redis, httpx_client, settings)`; `HttpSource` = cache → rate limit
+  → GET with 429/5xx retries; parsers in `sources.py` are pure.
+- `lean/` — `LeanREPL` (one container, Mathlib imported once, lock, restart on timeout);
+  `checker.check/verify` (verify = no errors, no sorry, only propext/Classical.choice/Quot.sound).
+- Images: `docker compose --profile tools build` (sandbox, lean ≈15 GB). Lean REPL needs ~3.5 GB RAM.
+- Markers: `integration` ⊃ {`network` (public APIs), `lean`}. CI runs
+  `integration and not lean and not network`; `lean.yml` is manual.
+
 ## Gotchas
 - Claude 5.x rejects sampling params → gateway always passes `drop_params=True`.
 - Catch `openai.OpenAIError` (not `litellm.exceptions.OpenAIError`) as the base of LiteLLM API errors.
 - Ruff `TC` rules are disabled: Pydantic needs annotations importable at runtime.
 - Postgres in compose is on host port 5544 (5432 is taken locally).
+- MCP SDK 2.x: `FastMCP` → `mcp.server.mcpserver.MCPServer`; `mcp.Client(server_or_params)`; pass
+  `lifespan=` to the constructor. Don't `pytest.skip` inside a Client context (anyio wraps it).
+- Module-scoped async fixtures need `@pytest_asyncio.fixture(scope="module", loop_scope="module")`
+  and `pytest.mark.asyncio(loop_scope="module")` on the tests.
+- Semantic Scholar throttles unauthenticated IPs hard (429); set `SEMANTIC_SCHOLAR_API_KEY`.
+- zsh: don't put a command in a variable (`$R`) — it won't word-split; use a function.
 
 ## Architecture (target)
 ```
@@ -86,6 +108,8 @@ uv run pre-commit install        # git hooks
 
 ## Git workflow
 - Branch per phase `phase-N-<name>`; Conventional Commits; never `--no-verify`; never commit secrets (`.env` is gitignored).
+- **No AI attribution**: no `Co-Authored-By: Claude` trailers in commits, no "Generated with Claude Code"
+  footer in PRs. The user must be the only contributor on GitHub.
 - Phase gate: ruff check + ruff format --check + mypy src + pytest -q + phase DoD.
 - On green: push → `gh pr create` (title `Phase N: <name>`) → `gh pr merge --squash --delete-branch`
   → pull main → `git tag -a v0.N.0 -m "Phase N: <name>"` → push tag.
