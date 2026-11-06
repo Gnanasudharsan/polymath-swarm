@@ -24,7 +24,10 @@ INFRA_ERRORS = ("RateLimitError", "quota exhausted", "no credits", "all models f
 
 
 def infra_failure(r: ProblemResult) -> bool:
-    return bool(r.attempt.error) and any(m in (r.attempt.error or "") for m in INFRA_ERRORS)
+    """An attempt that errored on the provider, or errored after spending almost nothing (its
+    agents' calls failed before doing real work, e.g. quota running out mid-run)."""
+    err = r.attempt.error or ""
+    return bool(err) and (any(m in err for m in INFRA_ERRORS) or r.attempt.usd < 0.01)
 
 
 async def main(suite_dir: Path, usd_per_problem: float) -> None:
