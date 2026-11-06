@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow SemVer.
 
+## [1.1.1] - 2026-11-06
+
+### Fixed
+- Web UI: pages shrank to their content's width (a `mx-auto` child of the flex-column body), which
+  squeezed the run page when it had little content. Pages now use the full width up to their max.
+- Release images are built for `linux/arm64` as well as `linux/amd64`, so they pull on Apple
+  Silicon (1.0.0 and 1.1.0 were amd64 only).
+
 ## [1.1.0] - 2026-11-06
 
 ### Added
