@@ -23,8 +23,10 @@ async def test_run_is_traced_in_langfuse() -> None:
     except httpx.HTTPError:
         pytest.skip("Langfuse is not running (docker compose --profile observability up -d)")
     run_id = f"run_lf_{uuid.uuid4().hex[:8]}"
-    env = {**os.environ, "LANGFUSE_HOST": HOST, "LANGFUSE_PUBLIC_KEY": AUTH[0],
-           "LANGFUSE_SECRET_KEY": AUTH[1]}  # fmt: skip
+    # The subprocess must not inherit local settings (e.g. the spend ledger) or reload .env.
+    env = {k: v for k, v in os.environ.items() if not k.startswith("POLYMATH_")}
+    env |= {"POLYMATH_NO_DOTENV": "1", "LANGFUSE_HOST": HOST, "LANGFUSE_PUBLIC_KEY": AUTH[0],
+            "LANGFUSE_SECRET_KEY": AUTH[1]}  # fmt: skip
     proc = await asyncio.create_subprocess_exec(
         sys.executable, "-m", "tests.integration.langfuse_probe", run_id, env=env,
         stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
