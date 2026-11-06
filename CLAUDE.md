@@ -180,6 +180,11 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
   `AsyncConnectionPool`): with one shared connection, a client disconnect cancels a read mid-query
   (anyio re-delivers the cancel during psycopg's clean-up) and the connection stays busy forever.
   Reproduce cancellations with an anyio cancel scope, not a single `task.cancel()`.
+- UI tokens live in `frontend/src/app/globals.css` (semantic tones success/warning/danger/running
+  with `-soft`/`-foreground`); status → tone/label/icon maps in `components/status.tsx`. Use
+  tokens, not raw zinc/green classes. Theme: `.dark` on `<html>`, set pre-paint by the layout script.
+- A hidden browser pane throttles the page (looks like a slow load); verify UI timing with
+  headless Playwright instead.
 - Body is `flex flex-col`: page `<main>` needs `w-full` next to `mx-auto max-w-*`.
 - zsh: don't put a command in a variable (`$R`) — it won't word-split; use a function.
 

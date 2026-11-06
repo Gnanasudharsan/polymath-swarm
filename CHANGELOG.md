@@ -3,6 +3,23 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow SemVer.
 
+## [1.2.0] - 2026-11-06
+
+### Changed
+- Web UI redesign: a design system with a cool-slate neutral palette, an indigo brand colour and
+  semantic tones used with one meaning everywhere (emerald verified/done, amber
+  challenged/approval, rose refuted/failed, indigo running); light and dark themes with a toggle
+  (system default, no flash on load).
+- App shell with brand mark, navigation and footer. Home: hero with the three evidence types,
+  a composer with typed examples, budget validation, character count and Cmd/Ctrl+Enter, and a
+  runs list with status pills, relative times, a loading skeleton and empty/unreachable states.
+- Run page: status header, stat cards (cost with budget bar, tasks, verified and refuted claims),
+  an approval panel that lists the proposed tasks, a themed task graph (role icons, legend,
+  readable zoom, zoom controls, starts at the first task), filterable claims with evidence
+  details and "show more", an evidence report with Copy and .md download, and an activity
+  timeline with event icons.
+- Responsive down to phone width; respects reduced motion.
+
 ## [1.1.2] - 2026-11-06
 
 ### Fixed

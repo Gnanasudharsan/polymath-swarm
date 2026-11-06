@@ -12,6 +12,10 @@ paper, a computation that is re-run in a sandbox, or a Lean 4 proof that compile
 
 ![demo](docs/images/demo.gif)
 
+| Run view (light) | Run view (dark) |
+|---|---|
+| ![run](docs/images/ui-run.png) | ![run, dark](docs/images/ui-run-dark.png) |
+
 ## Why
 
 LLMs are fluent and often wrong, and the errors look just like the right answers. Polymath Swarm

@@ -2,21 +2,34 @@
 
 import "@xyflow/react/dist/style.css";
 
-import { Background, type Edge, type Node, Position, ReactFlow } from "@xyflow/react";
+import {
+  Background,
+  BackgroundVariant,
+  Controls,
+  type Edge,
+  type Node,
+  Position,
+  ReactFlow,
+} from "@xyflow/react";
+import { LoaderCircle } from "lucide-react";
 import { useMemo } from "react";
 
+import { TASK_STATUS, type Tone } from "@/components/status";
 import type { TaskInfo, TaskStatus } from "@/lib/types";
 
-const STATUS_STYLE: Record<TaskStatus, { bg: string; border: string; label: string }> = {
-  pending: { bg: "#f4f4f5", border: "#d4d4d8", label: "pending" },
-  running: { bg: "#e0e7ff", border: "#6366f1", label: "running" },
-  done: { bg: "#dcfce7", border: "#16a34a", label: "done" },
-  failed: { bg: "#fee2e2", border: "#dc2626", label: "failed" },
-  skipped: { bg: "#f4f4f5", border: "#a1a1aa", label: "skipped" },
+import { roleIcon } from "./roles";
+
+// Theme-aware colours (CSS variables from globals.css), per semantic tone.
+const NODE_TONE: Record<Tone, { accent: string; soft: string; text: string }> = {
+  success: { accent: "var(--success)", soft: "var(--success-soft)", text: "var(--success-foreground)" },
+  warning: { accent: "var(--warning)", soft: "var(--warning-soft)", text: "var(--warning-foreground)" },
+  danger: { accent: "var(--danger)", soft: "var(--danger-soft)", text: "var(--danger-foreground)" },
+  running: { accent: "var(--running)", soft: "var(--running-soft)", text: "var(--running-foreground)" },
+  neutral: { accent: "var(--border)", soft: "var(--neutral-soft)", text: "var(--neutral-foreground)" },
 };
 
-const NODE_W = 190;
-const NODE_H = 72;
+const NODE_W = 200;
+const NODE_H = 76;
 
 /** Longest-path layering: a task's column is one more than its deepest dependency. */
 export function layout(tasks: TaskInfo[]): Record<string, { x: number; y: number }> {
@@ -39,9 +52,26 @@ export function layout(tasks: TaskInfo[]): Record<string, { x: number; y: number
     const col = level.get(t.id) ?? 0;
     const row = rows.get(col) ?? 0;
     rows.set(col, row + 1);
-    pos[t.id] = { x: col * 240, y: row * 110 };
+    pos[t.id] = { x: col * 250, y: row * 112 };
   }
   return pos;
+}
+
+export function GraphLegend() {
+  const items: TaskStatus[] = ["pending", "running", "done", "failed"];
+  return (
+    <div className="hidden flex-wrap items-center gap-3 text-xs text-muted-foreground sm:flex">
+      {items.map((s) => (
+        <span key={s} className="inline-flex items-center gap-1.5">
+          <span
+            className="size-2.5 rounded-sm ring-1 ring-inset ring-black/5"
+            style={{ background: NODE_TONE[TASK_STATUS[s].tone].accent }}
+          />
+          {TASK_STATUS[s].label}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 export function TaskGraph({
@@ -55,26 +85,53 @@ export function TaskGraph({
     const pos = layout(tasks);
     const nodes: Node[] = tasks.map((t) => {
       const st = status[t.id] ?? "pending";
-      const s = STATUS_STYLE[st];
+      const { tone, label } = TASK_STATUS[st];
+      const c = NODE_TONE[tone];
+      const Icon = roleIcon(t.assigned_role);
       return {
         id: t.id,
         position: pos[t.id],
         data: {
           label: (
-            <div className="text-left" data-testid={`task-${t.id}`} data-status={st}>
-              <div className="font-mono text-xs font-semibold">{t.id}</div>
-              <div className="text-[11px] text-zinc-600">{t.assigned_role}</div>
-              <div className="mt-1 text-[10px] uppercase tracking-wide">{s.label}</div>
+            <div
+              className="flex h-full flex-col justify-between text-left"
+              data-testid={`task-${t.id}`}
+              data-status={st}
+              title={t.description}
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  className="grid size-6 shrink-0 place-items-center rounded-md"
+                  style={{ background: c.soft, color: c.text }}
+                >
+                  <Icon className="size-3.5" />
+                </span>
+                <div className="min-w-0">
+                  <div className="truncate font-mono text-[11px] font-semibold text-foreground">{t.id}</div>
+                  <div className="truncate text-[11px] text-muted-foreground">{t.assigned_role}</div>
+                </div>
+              </div>
+              <span
+                className="inline-flex w-fit items-center gap-1 rounded-full px-2 py-px text-[10px] font-medium tracking-wide uppercase"
+                style={{ background: c.soft, color: c.text }}
+              >
+                {st === "running" && <LoaderCircle className="size-2.5 animate-spin" />}
+                {label}
+              </span>
             </div>
           ),
         },
+        className: st === "running" ? "animate-pulse-ring" : undefined,
         style: {
-          background: s.bg,
-          border: `2px solid ${s.border}`,
-          borderRadius: 10,
+          background: "var(--card)",
+          color: "var(--card-foreground)",
+          border: "1px solid var(--border)",
+          borderLeft: `4px solid ${c.accent}`,
+          borderRadius: 12,
+          padding: "10px 12px",
           width: NODE_W,
           height: NODE_H,
-          boxShadow: st === "running" ? `0 0 0 4px ${s.border}33` : undefined,
+          boxShadow: "0 1px 2px rgb(0 0 0 / 0.05)",
         },
         draggable: false,
         // Explicit size: nodes are rebuilt on every status change, and without known dimensions
@@ -87,23 +144,59 @@ export function TaskGraph({
       };
     });
     const edges: Edge[] = tasks.flatMap((t) =>
-      t.deps.map((d) => ({
-        id: `${d}->${t.id}`,
-        source: d,
-        target: t.id,
-        type: "smoothstep",
-        animated: status[t.id] === "running",
-      })),
+      t.deps.map((d) => {
+        const done = status[d] === "done";
+        return {
+          id: `${d}->${t.id}`,
+          source: d,
+          target: t.id,
+          type: "smoothstep",
+          animated: status[t.id] === "running",
+          style: {
+            stroke: done ? "var(--success)" : undefined,
+            strokeWidth: 1.5,
+            opacity: done ? 0.7 : 1,
+          },
+        };
+      }),
     );
     return { nodes, edges };
   }, [tasks, status]);
 
   if (!tasks.length) {
-    return <div className="grid h-full place-items-center text-sm text-zinc-500">Planning…</div>;
+    return (
+      <div className="grid h-full place-items-center">
+        <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground">
+          <LoaderCircle className="size-5 animate-spin text-primary" />
+          The supervisor is planning…
+        </div>
+      </div>
+    );
   }
   return (
-    <ReactFlow nodes={nodes} edges={edges} fitView proOptions={{ hideAttribution: true }}>
-      <Background gap={20} />
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      fitView
+      // Long plans would otherwise shrink until unreadable: keep a legible zoom and let the user
+      // drag to pan instead (wheel scrolling stays with the page).
+      fitViewOptions={{ padding: 0.15, minZoom: 0.8, maxZoom: 1.1 }}
+      onInit={(flow) => {
+        // When the plan is wider than the panel, start at its first task, not its middle.
+        requestAnimationFrame(() => {
+          const vp = flow.getViewport();
+          if (vp.x < 0) flow.setViewport({ ...vp, x: 24 });
+        });
+      }}
+      minZoom={0.4}
+      maxZoom={1.5}
+      preventScrolling={false}
+      zoomOnScroll={false}
+      nodesConnectable={false}
+      proOptions={{ hideAttribution: true }}
+    >
+      <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="var(--grid-dot)" />
+      <Controls showInteractive={false} position="bottom-right" />
     </ReactFlow>
   );
 }
