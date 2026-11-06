@@ -53,6 +53,20 @@ class LLMError(RuntimeError):
     """All models in the chain failed."""
 
 
+class QuotaExhaustedError(LLMError):
+    """The provider account has no credit/quota left. Retrying or falling back to another
+    model on the same account cannot help, so this is raised immediately."""
+
+
+_QUOTA_MARKERS = ("no credits remaining", "insufficient_quota", "exceeded your current quota",
+                  "credit balance is too low")  # fmt: skip
+
+
+def is_quota_error(exc: BaseException) -> bool:
+    text = str(exc).lower()
+    return any(m in text for m in _QUOTA_MARKERS)
+
+
 class LLMResponse(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -177,6 +191,8 @@ class LLMGateway:
                 async with asyncio.timeout(self.settings.llm_timeout_s):
                     response = await completion(**kwargs)
             except TRANSIENT_ERRORS as exc:
+                if is_quota_error(exc):
+                    raise QuotaExhaustedError(f"{model}: provider quota exhausted: {exc}") from exc
                 if attempt == attempts - 1:
                     raise
                 delay = self.settings.llm_retry_base_delay_s * (2**attempt)

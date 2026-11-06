@@ -12,6 +12,7 @@ from polymath.core.models import RunBudget
 from polymath.evals.datasets import EvalProblem, Suite
 from polymath.evals.scoring import score
 from polymath.evals.systems import Attempt, System
+from polymath.llm.gateway import QuotaExhaustedError
 
 log = get_logger(__name__)
 
@@ -107,7 +108,15 @@ async def run_suite(
     results = []
     for p in problems:
         for system in systems:
-            attempt = await system.solve(p, budget)
+            try:
+                attempt = await system.solve(p, budget)
+            except QuotaExhaustedError:
+                raise  # every later call would fail too: stop, don't record bogus failures
+            except Exception as exc:  # one broken attempt must not lose the whole suite
+                log.exception("eval.attempt_crashed", problem=p.id, system=system.name)
+                attempt = Attempt(error=f"crash: {type(exc).__name__}: {exc}")
+            if attempt.error and "quota exhausted" in attempt.error:
+                raise QuotaExhaustedError(attempt.error)
             correct = score(p, attempt.answer, attempt.verified_lean)
             log.info("eval.result", suite=suite, problem=p.id, system=system.name,
                      correct=correct, usd=round(attempt.usd, 4))  # fmt: skip

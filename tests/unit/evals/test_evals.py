@@ -115,3 +115,29 @@ async def test_harness_metrics_and_report(tmp_path: Path) -> None:
     assert "| math | swarm | 4 | 75% |" in md and "test notes" in md
     assert (tmp_path / "2026-01-01" / "accuracy.png").stat().st_size > 1000
     assert (tmp_path / "2026-01-01" / "results.json").exists()
+
+
+async def test_harness_aborts_on_quota_instead_of_recording_failures() -> None:
+    from polymath.llm.gateway import QuotaExhaustedError
+
+    class Broke:
+        name = "single"
+
+        async def solve(self, problem: EvalProblem, budget: RunBudget) -> Attempt:
+            return Attempt(error="LLMError: gpt-5-mini: provider quota exhausted: no credits")
+
+    probs = [EvalProblem(id="p", suite="math", prompt="q", gold="1")]
+    with pytest.raises(QuotaExhaustedError):
+        await run_suite("math", probs, [Broke()], FakeTools(), usd_per_problem=1.0)
+
+
+async def test_harness_records_a_crashing_attempt() -> None:
+    class Crashy:
+        name = "swarm"
+
+        async def solve(self, problem: EvalProblem, budget: RunBudget) -> Attempt:
+            raise KeyError("boom")
+
+    probs = [EvalProblem(id="p", suite="math", prompt="q", gold="1")]
+    run = await run_suite("math", probs, [Crashy()], FakeTools(), usd_per_problem=1.0)
+    assert run.results[0].attempt.error and "crash: KeyError" in run.results[0].attempt.error

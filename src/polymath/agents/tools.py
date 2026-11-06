@@ -9,7 +9,7 @@ from typing import Any, Protocol
 from polymath.core.config import Settings
 from polymath.mcp_servers import knowledge as knowledge_server
 from polymath.mcp_servers import lean, literature, sandbox, sympy
-from polymath.mcp_servers.client import MCPToolbox
+from polymath.mcp_servers.client import MCPToolbox, UnknownToolError
 from polymath.mcp_servers.knowledge.server import PaperText, SearchResult
 from polymath.mcp_servers.lean.checker import LeanCheckResult, LeanVerification
 from polymath.mcp_servers.lean.repl import LeanREPL
@@ -58,7 +58,10 @@ class MCPTools:
         return any(t.name == "knowledge.search" for t in self.toolbox.tools)
 
     async def _call(self, tool: str, args: dict[str, Any]) -> dict[str, Any]:
-        result = await self.toolbox.call(tool, args)
+        try:
+            result = await self.toolbox.call(tool, args)
+        except UnknownToolError as exc:
+            raise ToolCallError(f"tool {tool!r} is not mounted") from exc
         if result.is_error or result.structured is None:
             raise ToolCallError(f"{tool}: {result.text or 'no result'}")
         return result.structured
