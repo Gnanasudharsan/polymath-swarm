@@ -176,6 +176,10 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 - A2A messages from a client must use `role=Role.ROLE_USER` (helpers default to the agent role).
 - `docker compose up --build web` also rebuilds and restarts `api` (its build context is the
   whole repo), killing in-flight runs; resume them with `POST /runs/{id}/resume`.
+- Postgres checkpointer must be pool-backed (`postgres_checkpointer` builds an
+  `AsyncConnectionPool`): with one shared connection, a client disconnect cancels a read mid-query
+  (anyio re-delivers the cancel during psycopg's clean-up) and the connection stays busy forever.
+  Reproduce cancellations with an anyio cancel scope, not a single `task.cancel()`.
 - Body is `flex flex-col`: page `<main>` needs `w-full` next to `mx-auto max-w-*`.
 - zsh: don't put a command in a variable (`$R`) — it won't word-split; use a function.
 

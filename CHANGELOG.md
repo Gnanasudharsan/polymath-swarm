@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow SemVer.
 
+## [1.1.2] - 2026-11-06
+
+### Fixed
+- API returned 500 for every run read after a client disconnected mid-request (for example a
+  browser closing a live-event stream): the cancelled checkpoint read left the checkpointer's
+  single Postgres connection busy ("another command is already in progress") until restart. The
+  checkpointer now uses a connection pool that discards broken connections. Regression test
+  reproduces the disconnect with an anyio cancel scope.
+
 ## [1.1.1] - 2026-11-06
 
 ### Fixed

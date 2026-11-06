@@ -7,6 +7,7 @@ import multiprocessing as mp
 import os
 import signal
 
+import anyio
 import pytest
 
 from polymath.core.config import Settings
@@ -148,3 +149,28 @@ async def test_recent_runs_filters_by_owner_in_postgres() -> None:
             async with store.pool.connection() as conn:  # type: ignore[attr-defined]
                 await conn.execute("DELETE FROM polymath_events WHERE run_id LIKE %s",
                                    (f"run_own_{tag}_%",))  # fmt: skip
+
+
+async def test_cancelled_reads_do_not_break_the_checkpointer() -> None:
+    """An API client dropping a request (e.g. closing an SSE stream) cancels a checkpoint read
+    mid-query. With one shared connection that left it "busy" and every later read failed with
+    "another command is already in progress" until restart; a pool must survive it."""
+    run_id = f"run_cancel_pg_{os.urandom(4).hex()}"
+    async with swarm_infra(SETTINGS) as infra:
+        runner = SwarmRunner(
+            compile_graph(infra.checkpointer),
+            make_factory(FixedPlanner(diamond()), FakeExecutor(), infra.blackboard),
+            infra.blackboard,
+        )
+        await runner.start(Problem(statement="p"), run_id=run_id)
+        # Cancel the way the ASGI server does on disconnect (anyio cancel scope: cancellation is
+        # re-delivered at every await, interrupting the driver's own clean-up), sweeping the
+        # cancel point so some cancellations land while a query is on the wire.
+        for i in range(60):
+            async with anyio.create_task_group() as tg:
+                for _ in range(4):
+                    tg.start_soon(runner.snapshot, run_id)
+                await anyio.sleep((i % 12) * 0.0005)
+                tg.cancel_scope.cancel()
+        results = await asyncio.gather(*(runner.snapshot(run_id) for _ in range(10)))
+        assert all(s.status is RunStatus.COMPLETED for s in results)
