@@ -72,6 +72,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
+        env_ignore_empty=True,  # compose passes unset vars as "" (${VAR:-})
     )
 
     env: Literal["dev", "test", "prod"] = "dev"
@@ -119,7 +120,12 @@ class Settings(BaseSettings):
     spend_cap_usd: float | None = Field(default=None, gt=0)
 
     # HTTP API (Phase 7): clients send it as the `x-api-key` header
-    api_key: SecretStr | None = None
+    api_key: SecretStr | None = None  # legacy single key: the user "admin"
+    # Named users: {"alice": "sha256:<hex>"}; make entries with `polymath keys new alice`.
+    api_users: dict[str, SecretStr] = Field(default_factory=dict)
+    api_admins: list[str] = Field(default_factory=lambda: ["admin"])  # see every run
+    # Rate limits: "memory" (per process) or "redis" (shared by all API replicas, uses redis_url)
+    rate_limit_backend: Literal["memory", "redis"] = "memory"
     public_url: str = "http://localhost:8000"  # advertised in A2A Agent Cards
     api_writes_per_minute: int = Field(default=20, gt=0)
     api_reads_per_minute: int = Field(default=600, gt=0)

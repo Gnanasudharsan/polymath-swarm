@@ -76,12 +76,14 @@ class SwarmRunner:
         budget: RunBudget | None = None,
         run_id: str | None = None,
         require_approval: bool = False,
+        owner: str | None = None,
     ) -> RunSnapshot:
         run_id = run_id or new_id("run")
         budget = budget or RunBudget()
+        extra = {"owner": owner} if owner else {}
         await self.blackboard.post(
             run_id, EventKind.RUN_STARTED, problem=problem.model_dump(mode="json"),
-            budget=budget.model_dump(),
+            budget=budget.model_dump(), **extra,
         )  # fmt: skip
         initial: SwarmState = {
             "run_id": run_id,

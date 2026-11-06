@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Annotated
@@ -10,6 +11,7 @@ import typer
 
 from polymath.agents.tools import open_tools
 from polymath.api.app import create_app
+from polymath.api.auth import hash_key, new_key
 from polymath.api.runs import RunManager
 from polymath.cli_swarm import context_factory
 from polymath.core.config import Settings, get_settings, load_env_file
@@ -48,7 +50,24 @@ def manager_factory(settings: Settings, *, in_memory: bool, mock_llm: bool):  # 
     return factory
 
 
+keys_app = typer.Typer(help="Manage API users and keys.", no_args_is_help=True)
+
+
+@keys_app.command("new")
+def keys_new(user: Annotated[str, typer.Argument(help="User name, e.g. alice.")]) -> None:
+    """Create a key for USER. Prints the key once (give it to the user) and the hash to put in
+    POLYMATH_API_USERS (the server stores only hashes)."""
+    if not user.replace("-", "").replace("_", "").isalnum():
+        raise typer.BadParameter("use letters, digits, '-' and '_'")
+    key = new_key()
+    typer.echo(f"key  (give to {user}; shown once): {key}")
+    typer.echo(f"hash (server config):  {json.dumps({user: hash_key(key)})}")
+    typer.echo('Merge into POLYMATH_API_USERS, e.g. POLYMATH_API_USERS=\'{"alice":"sha256:..."}\'')
+
+
 def register(app: typer.Typer) -> None:
+    app.add_typer(keys_app, name="keys")
+
     @app.command()
     def serve(
         host: Annotated[str, typer.Option(help="Bind address.")] = "127.0.0.1",
@@ -61,7 +80,7 @@ def register(app: typer.Typer) -> None:
         ] = False,
         cors: Annotated[str, typer.Option(help="Comma-separated allowed origins.")] = "",
     ) -> None:
-        """Serve the Polymath API (POLYMATH_API_KEY required)."""
+        """Serve the Polymath API (POLYMATH_API_KEY or POLYMATH_API_USERS required)."""
         import uvicorn
 
         load_env_file()

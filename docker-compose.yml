@@ -70,6 +70,9 @@ services:
       sandbox: {condition: service_completed_successfully}
     environment:
       POLYMATH_API_KEY: ${POLYMATH_API_KEY:-}
+      POLYMATH_API_USERS: ${POLYMATH_API_USERS:-}
+      POLYMATH_API_ADMINS: ${POLYMATH_API_ADMINS:-}
+      POLYMATH_RATE_LIMIT_BACKEND: redis
       POLYMATH_POSTGRES_DSN: postgresql://polymath:polymath@postgres:5432/polymath
       POLYMATH_REDIS_URL: redis://redis:6379/0
       POLYMATH_PUBLIC_URL: ${POLYMATH_PUBLIC_URL:-http://localhost:8000}

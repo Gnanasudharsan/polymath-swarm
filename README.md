@@ -164,11 +164,24 @@ All settings come from environment variables or `.env` (see `.env.example` and
 |---|---|---|
 | `POLYMATH_MODEL_PROFILE` | `anthropic` | `anthropic` (Claude) or `openai` |
 | `POLYMATH_ROLE_MODELS` | from profile | per-role model override (JSON) |
-| `POLYMATH_API_KEY` | (none) | required for `serve` and the compose app stack |
+| `POLYMATH_API_KEY` | (none) | one API key (the user `admin`); this or `API_USERS` is required |
+| `POLYMATH_API_USERS` / `POLYMATH_API_ADMINS` | `{}` / `["admin"]` | named users with hashed keys; non-admins see only their own runs |
+| `POLYMATH_RATE_LIMIT_BACKEND` | `memory` | `redis` shares limits across API replicas (on in compose) |
 | `POLYMATH_SPEND_LEDGER` / `POLYMATH_SPEND_CAP_USD` | off | hard cap on total spend across runs |
 | `POLYMATH_MEMORY_ENABLED` | `true` | episodic memory and claim reuse |
 | `POLYMATH_A2A_DELEGATES` | `{}` | route roles to external A2A agents |
 | `POLYMATH_API_WRITES_PER_MINUTE` / `_READS_` | 20 / 600 | API rate limits per client |
+
+### Multiple users
+
+```bash
+uv run polymath keys new alice
+```
+
+This prints Alice's key (shown once) and a hash entry. Put the hash entries in
+`POLYMATH_API_USERS={"alice":"sha256:...","bob":"sha256:..."}`. Each user sees only the runs they
+started, over REST and A2A; users in `POLYMATH_API_ADMINS` see all of them. The web UI uses the key
+in its own `POLYMATH_API_KEY`, so it acts as that one user.
 
 ## Limitations
 
@@ -177,7 +190,7 @@ All settings come from environment variables or `.env` (see `.env.example` and
 - **Verification-first means abstaining.** With no verified claim, the swarm says so rather than guessing, which can lower accuracy on questions a single model answers correctly from memory.
 - **Lean image size.** Lean needs a 15 GB image and about 3.5 GB of RAM per REPL. Without it, proofs cannot be verified (other evidence still works).
 - **Docker socket.** The containerised API reaches the Docker socket to start sandboxes, which is root-equivalent on the host. Bind it to localhost and see [docs/security.md](docs/security.md).
-- **Single shared API key.** Rate limits are per process.
+- **Simple users.** Users and hashed keys live in configuration (no sign-up, no per-user spend quotas, only user/admin roles).
 - **Paraphrase in research QA.** Keyword scoring penalises paraphrase, and literature results vary run to run because search ranking does.
 - **Claude profile untested live.** The Anthropic profile is the default but was not exercised live during development, which used the OpenAI profile.
 

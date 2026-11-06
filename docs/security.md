@@ -12,7 +12,7 @@ and talks to other agents. This document lists what it protects, how, and what r
 | SymPy | Expressions from models (parsed with `eval` inside SymPy) | Deny-list screen (dunder, attribute access, quotes, brackets, `import`/`eval`/…), length limit, and a fresh child process per call, killed on timeout. The sandbox, not this screen, is the boundary for arbitrary programs. |
 | Fetched papers | Titles, abstracts, PDF text (prompt injection) | `polymath.security.untrusted`: control/bidi characters, chat-template tokens and our wrapper tags are stripped; instruction-like text is flagged; text is wrapped in `<paper>` and declared data. **Architectural control**: text is only ever quoted, and every citation is re-checked by the gate (re-fetch the paper, match title and a ≥ 6-word verbatim quote). Injected text can at worst cause a wrong *proposal*; it cannot make a claim verified. |
 | External A2A agents | Replies from delegated agents | Sanitised as untrusted text and turned into a low-confidence *proposed* claim with **no evidence**, so the gate cannot accept it on the remote's word. |
-| HTTP API / A2A | Requests from clients | One API key (`x-api-key`, constant-time compare); the server refuses to start without it. A2A JSON-RPC requires the key; Agent Cards are public for discovery. Per-client sliding-window rate limits (default 20 writes and 600 reads per minute; 429 with `Retry-After`). Input sizes bounded (problem ≤ 8000 characters, budget ≤ 10 USD per run). |
+| HTTP API / A2A | Requests from clients | Named users with keys stored only as SHA-256 hashes (`x-api-key`, constant-time compare over every entry); the server refuses to start without one. Each run records its owner; non-admins see and act on only their own runs, and other users' runs return the same 404 as missing ones. A2A JSON-RPC requires a key; Agent Cards are public for discovery. Per-client sliding-window rate limits (default 20 writes and 600 reads per minute; 429 with `Retry-After`), shared across replicas through Redis (fails open if Redis is down). Input sizes bounded (problem ≤ 8000 characters, budget ≤ 10 USD per run). |
 | Web UI | Browser | The API key stays server-side: the Next.js proxy adds it. The browser never sees it. |
 | Memory | Claims from earlier runs | Recalled claims re-enter as *proposed*; only the current run's gate can verify them. Memory stores the gate's verdicts, never merged agent state (this closed a cross-run laundering bug found in Phase 5). |
 | Spend | Runaway agent loops | Per-run `RunBudget` (USD, tokens, wall clock, iterations), checked before every call; an optional cross-run spend ledger with a hard cap; provider quota exhaustion fails fast. |
@@ -36,9 +36,10 @@ multi-tenant deployment, run sandboxes on a separate host or use a rootless runt
 
 ## Residual risks
 
-- A single shared API key, not per-user auth or roles.
+- Users are configuration (hashed keys in env): no per-user spend quotas, no roles beyond user/admin.
+- The web UI proxy uses one key, so all UI users act as one API user.
 - The SymPy screen is a deny-list (defence in depth only).
-- Rate limits are per process (in memory). Multiple API replicas need a shared limiter (Redis).
+- With `POLYMATH_RATE_LIMIT_BACKEND=memory` (the `polymath serve` default) limits are per process.
 - The Lean equivalence check uses an LLM judge. It can only *block* a proof, never admit one, but a
   wrong "not equivalent" lowers recall.
 - The Docker socket mount (above).
