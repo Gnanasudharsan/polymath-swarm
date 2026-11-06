@@ -3,6 +3,22 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow SemVer.
 
+## [1.0.0] - 2026-11-06
+
+### Added
+- A2A server: the swarm and each specialist as A2A agents (Agent Cards, JSON-RPC, API-key auth).
+- A2A client delegation (`POLYMATH_A2A_DELEGATES`) with untrusted, evidence-free handling of replies.
+- API rate limits; sanitisation of untrusted text (papers, passages, A2A replies); `docs/security.md`.
+- API and web Docker images; one-command `app` compose profile; GHCR release workflow.
+- Final README with demo GIF; ADR-0010; `examples/a2a_client.py`.
+
+### Fixed
+- **Correction to 0.5.0:** the literature agent's full-text citation path was not wired into `run()`,
+  so full-text passages were never used, although the release notes said they were. The gate's
+  full-text check worked; only the agent never produced full-text quotes. It is now wired in and
+  covered by a regression test.
+- Task-graph flicker on live updates in the UI.
+
 ## [0.7.0] - 2026-11-06
 
 ### Added

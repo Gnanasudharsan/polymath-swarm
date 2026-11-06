@@ -3,198 +3,202 @@
 [![CI](https://github.com/Gnanasudharsan/polymath-swarm/actions/workflows/ci.yml/badge.svg)](https://github.com/Gnanasudharsan/polymath-swarm/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**A verification-first multi-agent swarm for research and mathematics.**
-A supervisor decomposes a problem into a task graph; specialist agents (literature, reasoning,
-computation, formal verification, critique, synthesis) collaborate through a shared blackboard.
-Every claim in the final answer carries evidence: a verified citation, a reproduced computation,
-or a Lean 4 proof that compiles with zero `sorry`.
+**A verification-first multi-agent swarm for research and mathematics.** A supervisor breaks a
+problem into a task graph, and specialist agents (literature, reasoning, computation, Lean 4
+formalization, critique, synthesis) work on it in parallel. **Every claim in the final answer
+carries evidence that is re-checked independently**: a citation whose quote is re-found in the
+paper, a computation that is re-run in a sandbox, or a Lean 4 proof that compiles with zero
+`sorry` and only standard axioms. Anything unproven is reported as a conjecture.
 
-> **Status:** early development — Phase 7 (API & live UI) complete. See [PROGRESS.md](PROGRESS.md).
+![demo](docs/images/demo.gif)
 
-## Architecture
+## Why
+
+LLMs are fluent and often wrong, and the errors look just like the right answers. Polymath Swarm
+never takes an agent's word for anything. Agents produce *artifacts* (search queries, check
+programs, Lean proofs, counterexample searches). Code runs them through sandboxed tools, and a
+**verification gate** reproduces every piece of evidence before a claim may appear in the answer.
+
+## How it works
 
 ```mermaid
 flowchart TD
-    U[User problem] --> S[Supervisor / Planner]
+    U[Problem] --> S[Supervisor / Planner<br/>adaptive team per problem type]
     S --> G[(Task DAG)]
-    G --> R{Router}
-    R --> LIT[Literature] & REA[Reasoner] & CMP[Compute] & FOR[Formalizer] & CRI[Critic]
-    LIT & REA & CMP & FOR & CRI <--> BB[(Blackboard<br/>Redis + Postgres)]
-    BB --> VG{Verification gate<br/>citation · computation · Lean proof}
-    VG -->|verified| SYN[Synthesizer]
-    CRI -.->|refuted → replan| S
-    SYN --> OUT[Answer + evidence report + trace]
+    G --> R{Router<br/>parallel dispatch}
+    R --> LIT[Literature<br/>arXiv · S2 · OpenAlex · full text]
+    R --> REA[Reasoner]
+    R --> CMP[Compute<br/>SymPy · sandboxed Python]
+    R --> FOR[Formalizer<br/>Lean 4 + Mathlib]
+    R --> CRI[Critic<br/>counterexample search]
+    LIT & REA & CMP & FOR & CRI <--> BB[(Blackboard<br/>Postgres + Redis)]
+    CRI -.->|refuted → revision round| R
+    BB --> VG{Verification gate<br/>re-fetch quote · re-run program ·<br/>re-verify Lean · re-run counterexample}
+    VG -->|verified| SYN[Synthesizer] --> OUT[Answer + evidence report<br/>Markdown · JSON · trace]
+    VG -->|otherwise| CJ[Conjectures / refuted] --> OUT
+    M[(Episodic memory<br/>pgvector)] -.->|similar verified claims| S
 ```
 
-More detail: [docs/architecture.md](docs/architecture.md) · decisions: [docs/adr/](docs/adr/).
+- **Orchestration:** LangGraph, with a Postgres checkpointer, so runs resume after a pause, crash or `kill -9`. Human plan approval is optional, and budgets cap USD, tokens, wall clock and iterations.
+- **Tools:** every tool is an MCP server (literature, sandbox, sympy, lean, knowledge).
+- **Memory:** papers are ingested into pgvector for hybrid retrieval (full-text + vector, rank fusion, local cross-encoder rerank). Verified claims from past runs are recalled, then re-verified.
+- **Interop:** the swarm and each specialist are A2A agents, and roles can be delegated to external A2A agents.
+- **Observability:** OpenTelemetry traces go to self-hosted Langfuse, with every agent, tool and LLM call and its cost.
 
-## Stack
+Details: [docs/architecture.md](docs/architecture.md) · design decisions: [docs/adr/](docs/adr/) ·
+threat model: [docs/security.md](docs/security.md).
 
-LangGraph · LiteLLM (Claude primary) · MCP · A2A · SymPy / sandboxed Python · Lean 4 + Mathlib ·
-Postgres + pgvector · Redis · FastAPI + SSE · Next.js + React Flow · OpenTelemetry + Langfuse.
+## Results
 
-## Quickstart (development)
+Single agent (one LLM call, same models and checkers) vs. the swarm, from
+[evals/reports/2026-11-05](evals/reports/2026-11-05/report.md). Small samples, so these numbers
+are indicative. The run used the OpenAI profile (gpt-5 for Lean, gpt-5-mini elsewhere), with
+deterministic scoring.
 
-Prerequisites: [uv](https://docs.astral.sh/uv/), Docker, Node ≥ 20 (frontend, later phases).
+| Suite | n | Single agent | Swarm | Swarm claims verified | Hallucinated citations (single → swarm) | $/problem (single → swarm) |
+|---|---|---|---|---|---|---|
+| miniF2F (Lean 4, `mathd_*`) | 3 | 0% | **33%** | 5% | n/a | 0.14 → 0.12 |
+| MATH Level 5 | 6 | 100% | 100% | 64% | n/a | 0.0005 → 0.007 |
+| Research QA | 6 | **67%** | 33% | 100% | **50% → 0%** | 0.001 → 0.006 |
+
+The swarm trades coverage for trust. It proves what the single agent can't, matches it on MATH
+while backing most of its claims with re-run computations, and never cites a paper that doesn't
+say what it claims. The single agent answered more research questions, but half of its citations
+were unsupported. Hybrid retrieval on a labelled set reaches **recall@10 = 0.983, MRR = 0.950**.
+
+End-to-end demos with committed evidence reports and traces are in [examples/](examples/README.md).
+They cover a Lean-verified proof, a reproduced computation, verified literature quotes, and lemma
+reuse from memory.
+
+## Quickstart
+
+**Prerequisites:** Docker, [uv](https://docs.astral.sh/uv/), and an LLM provider key
+(Anthropic by default; OpenAI works with `POLYMATH_MODEL_PROFILE=openai`). Node ≥ 20 only if you
+develop the UI.
 
 ```bash
 git clone https://github.com/Gnanasudharsan/polymath-swarm.git && cd polymath-swarm
 ```
 
 ```bash
-uv sync && uv run pre-commit install
-```
-
-```bash
 cp .env.example .env
 ```
+
+Edit `.env`: set `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY` plus `POLYMATH_MODEL_PROFILE=openai`), and
+set `POLYMATH_API_KEY` to any secret string for the HTTP API.
+
+### Option A: the whole stack (API + web UI), one command
+
+```bash
+docker compose --profile app up -d --build
+```
+
+Open **http://localhost:3100**. The API is on http://localhost:8000, and the A2A Agent Card is at
+http://localhost:8000/.well-known/agent-card.json.
+
+### Option B: the CLI
 
 ```bash
 docker compose up -d --wait
 ```
 
 ```bash
-uv run pytest -q
+docker compose --profile tools build sandbox
 ```
 
 ```bash
-uv run polymath ask "Prove that the square root of 2 is irrational."
-```
-
-`ask` runs a single Reasoner (needs a provider key in `.env`; use `--model` to pick one, `--max-usd`
-to cap spend, `--json` for machine-readable output). Claims it prints are *proposed* — the
-verification pipeline arrives in later phases.
-
-Postgres is exposed on host port **5544** and Redis on **6379**.
-
-### Running the swarm
-
-```bash
-uv run polymath solve "Show that the product of two consecutive integers is even." --approve-plan
-```
-
-The supervisor plans a task DAG, you approve or give feedback, independent tasks run in parallel,
-and every step is checkpointed in Postgres. Then you can:
-
-```bash
-uv run polymath resume <run_id>
+uv sync
 ```
 
 ```bash
-uv run polymath trace <run_id> -o trace.json
+uv run polymath solve "Compute the sum of the first 100 primes; is it prime?" --max-usd 0.5
 ```
 
-Every run ends with an evidence report (`reports/<run_id>.md` and `.json`): the answer cites
-only claims that passed the verification gate, and everything else is listed as a conjecture or
-refuted. Use `--memory` to run without Postgres/Redis and `--no-tools` for a Reasoner-only dry run.
+The evidence report is written to `reports/<run_id>.md` and `.json`. Useful flags:
+`--approve-plan` (review the plan first), `--memory` (no Postgres/Redis), `--no-tools`.
 
-### Demos
+### Optional extras
 
-| Problem | Verified by | Cost |
+| What | Command | Notes |
 |---|---|---|
-| n·(n+1) is even for all n ∈ ℕ | Lean 4 + Mathlib proof, back-translation judged faithful | $0.063 |
-| Sum of the first 100 primes (24133, prime) | sandbox computation, re-run by the gate | $0.011 |
-| 2023 exponential improvement for diagonal Ramsey numbers | verbatim quotes in re-fetched arXiv abstracts | $0.007 |
-| n·(n+1)·(n+2) is even, after an earlier run proved it | recalled from episodic memory, Lean proof re-verified | $0.096 |
+| Lean 4 + Mathlib | `docker compose --profile tools build lean` | about 15 GB; enables formal proofs |
+| Langfuse tracing | `docker compose --profile observability up -d --wait` | UI on :3000; set `LANGFUSE_*` (see `.env.example`) |
+| Free scripted demo | `POLYMATH_API_KEY=x uv run polymath serve --memory --mock-llm` | mock LLM; real sandbox and gate |
 
-### Memory
+## A2A interop
 
-Papers are ingested (arXiv PDF → chunks → local embeddings) into Postgres + pgvector and searched
-with hybrid retrieval (full-text + vectors, rank fusion, cross-encoder rerank). On the labeled
-retrieval set ([evals/reports](evals/reports/)), hybrid + rerank reaches **recall@10 = 0.983, MRR =
-0.950**. Every run's verified claims are remembered; related runs recall them, and the gate
-re-verifies them before use. Embedding models run locally (about 130 MB, downloaded once).
-
-Reports and full traces are in [examples/](examples/README.md). To run with OpenAI only, set
-`POLYMATH_MODEL_PROFILE=openai` in `.env`. Set `POLYMATH_SPEND_CAP_USD` to cap total spend.
-
-### Tool servers (MCP)
-
-Build the tool images once (the Lean + Mathlib image is large, about 15 GB):
+The swarm is an [A2A](https://a2a-protocol.org) agent. Each specialist (literature, reasoner,
+compute, formalizer, critic) is too, at `/agents/<role>/`. Cards are public; calls need the
+`x-api-key` header.
 
 ```bash
-docker compose --profile tools build
+POLYMATH_API_KEY=... uv run python examples/a2a_client.py "Is 2^10 + 1 prime?"
 ```
 
-Each server speaks MCP over stdio and works with any MCP client:
+```bash
+POLYMATH_API_KEY=... uv run python examples/a2a_client.py --agent compute "Is 97 prime?"
+```
 
-| Server | Command | Tools |
+To delegate a role to an external A2A agent, set
+`POLYMATH_A2A_DELEGATES={"literature": "https://other-agent.example"}`. Its replies are treated
+as untrusted proposals and can never be "verified" on the remote's word.
+
+## CLI
+
+| Command | What it does |
+|---|---|
+| `polymath solve "…"` | plan and run the swarm; writes the evidence report |
+| `polymath resume <run_id>` | continue a paused (plan approval) or interrupted run |
+| `polymath trace <run_id> -o t.json` | export the full trace (plan, results, claims, events) |
+| `polymath serve` | HTTP API with SSE and A2A (`--memory`, `--mock-llm`) |
+| `polymath eval --suite all --n 5` | single agent vs swarm on miniF2F, MATH, research QA |
+| `polymath ask "…"` | one Reasoner call (no verification) |
+| `polymath graph` | the orchestration graph as Mermaid |
+
+## Configuration
+
+All settings come from environment variables or `.env` (see `.env.example` and
+`src/polymath/core/config.py`).
+
+| Variable | Default | Purpose |
 |---|---|---|
-| SymPy | `uv run python -m polymath.mcp_servers.sympy` | simplify, solve, integrate, series, verify_identity |
-| Sandbox | `uv run python -m polymath.mcp_servers.sandbox` | run_python (no network, read-only FS, resource caps) |
-| Literature | `uv run python -m polymath.mcp_servers.literature` | arXiv, Semantic Scholar, OpenAlex search and lookup |
-| Lean | `uv run python -m polymath.mcp_servers.lean` | check, get_goals, count_sorry, verify_proof |
+| `POLYMATH_MODEL_PROFILE` | `anthropic` | `anthropic` (Claude) or `openai` |
+| `POLYMATH_ROLE_MODELS` | from profile | per-role model override (JSON) |
+| `POLYMATH_API_KEY` | (none) | required for `serve` and the compose app stack |
+| `POLYMATH_SPEND_LEDGER` / `POLYMATH_SPEND_CAP_USD` | off | hard cap on total spend across runs |
+| `POLYMATH_MEMORY_ENABLED` | `true` | episodic memory and claim reuse |
+| `POLYMATH_A2A_DELEGATES` | `{}` | route roles to external A2A agents |
+| `POLYMATH_API_WRITES_PER_MINUTE` / `_READS_` | 20 / 600 | API rate limits per client |
+
+## Limitations
+
+- **Small evaluations.** The published comparison uses 3–6 problems per suite because of budget,
+  and miniF2F is sampled from the easier `mathd_*` problems.
+- **Verification-first means abstaining.** With no verified claim, the swarm says so rather than guessing, which can lower accuracy on questions a single model answers correctly from memory.
+- **Lean image size.** Lean needs a 15 GB image and about 3.5 GB of RAM per REPL. Without it, proofs cannot be verified (other evidence still works).
+- **Docker socket.** The containerised API reaches the Docker socket to start sandboxes, which is root-equivalent on the host. Bind it to localhost and see [docs/security.md](docs/security.md).
+- **Single shared API key.** Rate limits are per process.
+- **Paraphrase in research QA.** Keyword scoring penalises paraphrase, and literature results vary run to run because search ranking does.
+- **Claude profile untested live.** The Anthropic profile is the default but was not exercised live during development, which used the OpenAI profile.
+
+## Development
+
+```bash
+uv sync && uv run pre-commit install
+```
+
+```bash
+uv run ruff check . && uv run ruff format --check . && uv run mypy src && uv run pytest -q
+```
 
 ```bash
 uv run pytest -m integration -q
 ```
 
-## Web UI
-
-![run view](docs/images/ui-run.png)
-
-A live task graph (nodes light up as agents work), claims with evidence badges (📚 citation ·
-🧮 computation · ✅ Lean · ♻️ memory), a cost meter, plan approval and the evidence report with
-KaTeX maths. Start the API, then the UI:
-
-```bash
-POLYMATH_API_KEY=change-me uv run polymath serve --port 8000
-```
-
-```bash
-cd frontend && npm install && POLYMATH_API_URL=http://localhost:8000 POLYMATH_API_KEY=change-me npm run dev -- -p 3100
-```
-
-Open http://localhost:3100. Add `--mock-llm` to `serve` for a free, scripted demo run (the
-sandbox and the verification gate still run for real). The API: `POST /runs`, `GET /runs/{id}`,
-`GET /runs/{id}/stream` (SSE), `POST /runs/{id}/approve`, all with an `x-api-key` header.
-
-<p float="left">
-  <img src="docs/images/ui-home.png" width="49%" alt="new problem" />
-  <img src="docs/images/ui-approval.png" width="49%" alt="plan approval" />
-</p>
-
-## Results: single agent vs swarm
-
-From [evals/reports/2026-11-05](evals/reports/2026-11-05/report.md). Small samples, indicative
-only. OpenAI profile (gpt-5 for Lean, gpt-5-mini elsewhere); deterministic scoring.
-
-| Suite | n | Single agent | Swarm | Swarm verified-claim rate | Hallucinated citations (single → swarm) | $/problem (single → swarm) |
-|---|---|---|---|---|---|---|
-| miniF2F (Lean 4, `mathd_*`) | 3 | 0% | **33%** | 5% | n/a | $0.14 → $0.12 |
-| MATH Level 5 | 6 | 100% | 100% | 64% | n/a | $0.0005 → $0.007 |
-| Research QA | 6 | **67%** | 33% | 100% | **50% → 0%** | $0.001 → $0.006 |
-
-![accuracy](evals/reports/2026-11-05/accuracy.png)
-
-The swarm trades coverage for trust. It proves what the single agent can't (miniF2F), matches it on
-MATH while backing 64% of its claims with re-run computations, and on research questions never
-cites a paper that doesn't say what it claims. The single agent got more research answers "right",
-but half of its citations were unsupported. Reproduce with `uv run polymath eval --suite all --n 5`.
-
-### Observability
-
-```bash
-docker compose --profile observability up -d --wait
-```
-
-With `LANGFUSE_HOST/PUBLIC_KEY/SECRET_KEY` set (see `.env.example`), every run is a trace in
-self-hosted Langfuse at http://localhost:3000: one span per agent task and tool call, plus every
-LLM generation with model, tokens and cost.
-
-## Roadmap
-
-| Phase | Scope |
-|---|---|
-| 0 | Bootstrap: tooling, CI, compose, docs |
-| 1 | Core runtime: models, LLM gateway, budget, Reasoner, CLI |
-| 2 | MCP tools: literature, sandbox, SymPy, Lean |
-| 3 | Orchestration: LangGraph supervisor, DAG, blackboard, checkpoints |
-| 4 | Specialists & verification loop |
-| 5 | Memory & knowledge (pgvector, hybrid retrieval, episodic memory) |
-| 6 | Evals, observability, cost |
-| 7 | API & live frontend |
-| 8 | A2A interop, hardening, v1.0.0 |
+Integration tests need Docker. Their `lean` and `network` subsets need the Lean image and internet
+access; `live` tests call real models. The frontend e2e runs with
+`cd frontend && npx playwright test`. Project memory for contributors and coding agents is in
+[CLAUDE.md](CLAUDE.md); history is in [PROGRESS.md](PROGRESS.md) and [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

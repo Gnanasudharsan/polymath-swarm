@@ -47,7 +47,7 @@ flowchart TD
 | Orchestration | `polymath.graph` | LangGraph `StateGraph`, supervisor, router, Postgres checkpointer, HITL interrupts | 3 |
 | Blackboard | `polymath.blackboard` | Redis pub/sub for live events, Postgres for durable history | 3 |
 | Memory | `polymath.memory` | pgvector paper chunks, hybrid retrieval, episodic memory, claims store; `knowledge` MCP server | 5 |
-| Interop | `polymath.a2a` | A2A Agent Cards, server and client | 8 |
+| Interop | `polymath.a2a` | A2A Agent Cards; swarm and specialists as A2A agents; delegation to external agents | 8 |
 | API | `polymath.api` | FastAPI, SSE run streaming, plan approval, API-key auth, mock-LLM mode | 7 |
 | Frontend | `frontend/` | Next.js + React Flow live task graph, claim panel, cost meter | 7 |
 
@@ -189,6 +189,22 @@ flowchart LR
 ```
 
 See ADR-0009. `polymath serve --mock-llm` gives a free scripted run for UI work and the Playwright e2e.
+
+## A2A interop & deployment (Phase 8)
+
+```mermaid
+flowchart LR
+    X[External A2A client] -->|card + message/send| A2A[/a2a  ·  /agents/&lt;role&gt;/a2a/]
+    A2A --> SW[Swarm run or one specialist]
+    SW -->|delegate role| EXT[External A2A agent]
+    EXT -->|reply = untrusted, evidence-free claim| SW
+    SW --> R[Evidence report artifacts]
+```
+
+- Cards are public; JSON-RPC needs `x-api-key`; rate limits apply (ADR-0010).
+- Compose profiles: default (Postgres, Redis) · `tools` (sandbox, Lean builds) · `app` (API :8000 +
+  web :3100) · `observability` (Langfuse). Images `polymath-{api,web,sandbox}` are on GHCR.
+- Threat model and controls: [security.md](security.md).
 
 ## Infrastructure (dev)
 

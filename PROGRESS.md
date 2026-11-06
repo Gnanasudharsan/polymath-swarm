@@ -1,5 +1,25 @@
 # Progress
 
+## Phase 8 — A2A interop, hardening, release (2026-11-06)
+
+**Shipped**
+- A2A: the swarm and five specialists as A2A agents (Agent Cards + JSON-RPC, API-key auth); delegation of
+  any role to an external A2A agent, with replies treated as untrusted, evidence-free proposals
+- Security: per-client API rate limits; sanitiser for untrusted paper text and A2A replies; dependency
+  audit; threat model in `docs/security.md`
+- One-command stack (`docker compose --profile app up -d --build`: Postgres, Redis, API, web, sandbox
+  image); API and web images; GHCR release workflow
+- Final README (problem, architecture, results, demo GIF, quickstart, limitations), ADR-0010,
+  `examples/a2a_client.py`
+- Fixed: the literature agent's full-text path (helpers existed since Phase 5 but `run()` never called
+  them); task-graph flicker in the UI
+
+**Metrics**: 215 unit tests, 38 integration tests, 1 e2e test. Clean-machine check: fresh clone, only
+the README's steps, both quickstart options. Ledger at release: see CHANGELOG.
+
+**Known gaps**: single shared API key; per-process rate limits; Lean image not published (15 GB);
+Anthropic profile untested live; small eval samples.
+
 ## Phase 7 — API & live frontend (2026-11-06)
 
 **Shipped**
