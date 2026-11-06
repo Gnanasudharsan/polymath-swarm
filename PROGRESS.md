@@ -1,5 +1,23 @@
 # Progress
 
+## Phase 7 — API & live frontend (2026-11-06)
+
+**Shipped**
+- FastAPI service (`polymath serve`): `POST /runs`, `GET /runs`, `GET /runs/{id}`, `GET /runs/{id}/stream`
+  (SSE replay + live), `POST /runs/{id}/approve`, `POST /runs/{id}/resume`, `/health`; API-key auth
+- Next.js 16 UI: problem input (budget, plan approval), live React Flow task graph, claim panel with evidence
+  badges, cost meter, approve / replan-with-feedback, KaTeX evidence report, activity stream; server-side
+  proxy keeps the key out of the browser
+- Deterministic mock-LLM mode for UI development and e2e (real sandbox + gate, no cost, no ledger)
+- Playwright e2e (plan approval -> live graph -> verified claim -> KaTeX report) in CI; screenshots in README
+- ADR-0009
+
+**Metrics**: 202 unit tests, 37 integration tests, 1 e2e test, all passing. LLM spend in Phase 7: 0 USD
+(ledger unchanged at 2.58 of 5 USD).
+
+**Known gaps**: single shared API key (no users); runs interrupted by an API restart must be resumed
+explicitly; mock mode always replays the same computation run.
+
 ## Phase 6 — Evals, observability, cost (2026-11-05)
 
 **Shipped**

@@ -9,7 +9,7 @@ computation, formal verification, critique, synthesis) collaborate through a sha
 Every claim in the final answer carries evidence: a verified citation, a reproduced computation,
 or a Lean 4 proof that compiles with zero `sorry`.
 
-> **Status:** early development — Phase 6 (evals & observability) complete. See [PROGRESS.md](PROGRESS.md).
+> **Status:** early development — Phase 7 (API & live UI) complete. See [PROGRESS.md](PROGRESS.md).
 
 ## Architecture
 
@@ -128,6 +128,31 @@ Each server speaks MCP over stdio and works with any MCP client:
 ```bash
 uv run pytest -m integration -q
 ```
+
+## Web UI
+
+![run view](docs/images/ui-run.png)
+
+A live task graph (nodes light up as agents work), claims with evidence badges (📚 citation ·
+🧮 computation · ✅ Lean · ♻️ memory), a cost meter, plan approval and the evidence report with
+KaTeX maths. Start the API, then the UI:
+
+```bash
+POLYMATH_API_KEY=change-me uv run polymath serve --port 8000
+```
+
+```bash
+cd frontend && npm install && POLYMATH_API_URL=http://localhost:8000 POLYMATH_API_KEY=change-me npm run dev -- -p 3100
+```
+
+Open http://localhost:3100. Add `--mock-llm` to `serve` for a free, scripted demo run (the
+sandbox and the verification gate still run for real). The API: `POST /runs`, `GET /runs/{id}`,
+`GET /runs/{id}/stream` (SSE), `POST /runs/{id}/approve`, all with an `x-api-key` header.
+
+<p float="left">
+  <img src="docs/images/ui-home.png" width="49%" alt="new problem" />
+  <img src="docs/images/ui-approval.png" width="49%" alt="plan approval" />
+</p>
 
 ## Results: single agent vs swarm
 
