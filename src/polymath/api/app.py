@@ -12,10 +12,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import EventSourceResponse
 
 from polymath import __version__
+from polymath.a2a.server import mount_a2a
 from polymath.api.runs import RunBusyError, RunManager, RunNotFoundError
 from polymath.api.schemas import Accepted, Created, CreateRun, Decision, RunDetail, RunList
 from polymath.core.config import Settings
 from polymath.core.models import RunBudget
+from polymath.graph.runner import SwarmRunner
 
 ManagerFactory = Callable[[], AbstractAsyncContextManager[RunManager]]
 
@@ -40,9 +42,19 @@ def create_app(
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         async with manager_factory() as manager:
             app.state.manager = manager
+            holder["runner"] = manager.runner
             yield
 
     app = FastAPI(title="Polymath Swarm API", version=__version__, lifespan=lifespan)
+    holder: dict[str, SwarmRunner] = {}
+    # A2A: the swarm and each specialist as agents (cards public, JSON-RPC needs the key).
+    mount_a2a(
+        app,
+        lambda: holder["runner"],
+        base_url=settings.public_url,
+        budget=RunBudget.model_validate(settings.budget.model_dump()),
+        api_key=api_key,
+    )
     if cors_origins:
         app.add_middleware(CORSMiddleware, allow_origins=cors_origins, allow_methods=["*"],
                            allow_headers=["*"])  # fmt: skip

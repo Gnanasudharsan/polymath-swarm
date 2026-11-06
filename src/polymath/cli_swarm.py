@@ -11,6 +11,7 @@ from typing import Annotated, Any
 
 import typer
 
+from polymath.a2a.client import A2ADelegate
 from polymath.agents.registry import default_executors, specialists
 from polymath.agents.tools import Tools, open_tools
 from polymath.blackboard import Blackboard
@@ -50,6 +51,11 @@ def context_factory(
     def make(budget: BudgetTracker) -> RunContext:
         gateway = LLMGateway(settings, budget=budget, completion_fn=completion_fn)
         executors = specialists(gateway, tools) if tools else default_executors(gateway)
+        key = settings.a2a_delegate_api_key
+        for role, url in settings.a2a_delegates.items():
+            executors[role] = A2ADelegate(
+                url, role, api_key=key.get_secret_value() if key else None
+            )
         return RunContext(
             planner=LLMPlanner(gateway), executors=executors, blackboard=blackboard,
             budget=budget, memory=memory,
