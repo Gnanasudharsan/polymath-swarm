@@ -35,7 +35,7 @@ evals/reports/raw/
 .vscode/
 
 # Evidence reports from local runs (examples/ keeps committed ones)
-reports/
+/reports/
 
 # Downloaded benchmark data (not redistributed)
 evals/datasets/cache/

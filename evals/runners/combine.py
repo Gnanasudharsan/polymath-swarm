@@ -21,6 +21,23 @@ Model profile `openai`: gpt-5 for Lean/formalization, gpt-5-mini elsewhere. Per-
 $0.25 per system. **Small samples** (stated per suite), so treat differences as indicative.
 Scoring is deterministic: numeric equivalence (MATH), all answer keywords present (research QA),
 and a gate-verified Lean proof that keeps the benchmark statement verbatim (miniF2F).
+
+## Findings (2026-11-05 run)
+
+- **miniF2F**: the swarm proved 1/3 (Lean repair + Mathlib automation), the single agent 0/3, and
+  the swarm was cheaper per problem ($0.12 vs $0.14), because its gpt-5 calls were shorter.
+- **MATH (Level 5)**: both 6/6. The swarm costs about 15 times more ($0.007 vs $0.0005 per
+  problem) and backs 64% of its claims with re-run computations; the single agent's answers carry
+  no evidence.
+- **Research QA**: the single agent answered more (4/6 vs 2/6) but **3 of its 6 citations were
+  unsupported** (quote not found in the re-fetched paper): a 50% hallucinated-citation rate. Every
+  swarm citation (15/15) was verified. The swarm's misses come from verification-first behaviour
+  (it abstained on ResNet when search did not surface the original paper) and from strict keyword
+  scoring (e.g. "generative model" instead of "generator"). The scorer was fixed before the run and
+  was not changed after seeing results.
+- An earlier attempt of this run was invalidated when the OpenAI account ran out of credit; only
+  the affected attempts were re-run (`evals/runners/rerun_failed.py`), so no valid result was
+  replaced.
 """
 
 

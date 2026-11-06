@@ -1,5 +1,25 @@
 # Progress
 
+## Phase 6 — Evals, observability, cost (2026-11-05)
+
+**Shipped**
+- Self-hosted Langfuse v4.76 (compose profile `observability`) with OTLP trace export: one trace per run,
+  spans per agent task and tool call, LLM generations with model, tokens and cost; verified by an
+  integration test against Langfuse's API
+- Eval harness `polymath eval`: miniF2F (Lean 4), MATH Level 5 and an original research-QA set;
+  single-agent baseline vs swarm; deterministic scoring; metrics: accuracy, verified-claim rate,
+  hallucinated-citation rate, cost and latency per problem; Markdown + chart report
+- Report committed: `evals/reports/2026-11-05/` (numbers in the README)
+- Planner v2 (value questions -> compute); quota fail-fast; harness survives crashing attempts
+- ADR-0008
+
+**Metrics**: 193 unit tests, 37 integration tests. Eval (n = 3/6/6): miniF2F 0% -> 33%, MATH 100% -> 100%
+(64% of swarm claims verified), research QA 67% -> 33% accuracy but hallucinated citations 50% -> 0%.
+Eval spend about 1.25 USD; Phase 6 total about 1.41 USD (ledger 2.58 of 5 USD).
+
+**Known gaps**: tiny samples (budget); miniF2F sampled from the easier `mathd_*` half; strict keyword
+scoring penalises paraphrase; DeepEval not used (deterministic scorers instead, ADR-0008).
+
 ## Phase 5 — Memory & knowledge (2026-11-05)
 
 **Shipped**

@@ -3,6 +3,19 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow SemVer.
 
+## [0.6.0] - 2026-11-05
+
+### Added
+- Self-hosted Langfuse in compose; OTLP export with run/agent/tool/generation spans.
+- Eval harness and `polymath eval` (miniF2F, MATH Level 5, research QA; single vs swarm).
+- Combined eval report with charts; re-run tooling for infrastructure failures; ADR-0008.
+
+### Fixed
+- Planner routes value questions to computation instead of formalization (planner v2).
+- Provider quota exhaustion fails fast instead of being retried as a rate limit.
+- An unmounted tool no longer crashes a run; one crashing eval attempt no longer loses a suite.
+- Tests no longer let LiteLLM load the local `.env` (`LITELLM_MODE=PRODUCTION`).
+
 ## [0.5.0] - 2026-11-05
 
 ### Added
