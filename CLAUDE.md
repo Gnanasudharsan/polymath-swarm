@@ -105,7 +105,8 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
   (`==`), never `is`. Nested Pydantic fields come back as real enums.
 - `graph.add_node(..., input_schema=TaskInput)` needs a `type: ignore[call-overload]` (LangGraph typing).
 - **LiteLLM calls `load_dotenv()` on import**, so `.env` values (model profile, spend ledger) enter
-  `os.environ`. `tests/conftest.py` strips `POLYMATH_*` per test and sets `POLYMATH_NO_DOTENV=1`;
+  `os.environ` unless `LITELLM_MODE != "DEV"`. `tests/conftest.py` sets `LITELLM_MODE=PRODUCTION`
+  first, strips `POLYMATH_*` per test and sets `POLYMATH_NO_DOTENV=1`;
   never build `Settings` at test-module import time (use the `settings`/`infra_settings` fixtures).
 - Never open `MCPToolbox`/`open_tools` in an async-generator fixture: anyio needs enter/exit in
   the same task. Open it inside the test body.
