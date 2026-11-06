@@ -174,6 +174,9 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 - React Flow nodes rebuilt per render need explicit `width`/`height` or they flicker while
   re-measuring.
 - A2A messages from a client must use `role=Role.ROLE_USER` (helpers default to the agent role).
+- `docker compose up --build web` also rebuilds and restarts `api` (its build context is the
+  whole repo), killing in-flight runs; resume them with `POST /runs/{id}/resume`.
+- Body is `flex flex-col`: page `<main>` needs `w-full` next to `mx-auto max-w-*`.
 - zsh: don't put a command in a variable (`$R`) — it won't word-split; use a function.
 
 ## Architecture (target)

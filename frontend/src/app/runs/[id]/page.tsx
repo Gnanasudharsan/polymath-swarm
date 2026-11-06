@@ -10,7 +10,7 @@ async function Run({ params }: { params: Promise<{ id: string }> }) {
 
 export default function RunPage(props: PageProps<"/runs/[id]">) {
   return (
-    <main className="mx-auto max-w-7xl space-y-4 p-6">
+    <main className="mx-auto w-full max-w-7xl space-y-4 p-6">
       <Link href="/" className="text-sm text-zinc-500 hover:underline">
         ← New problem
       </Link>
