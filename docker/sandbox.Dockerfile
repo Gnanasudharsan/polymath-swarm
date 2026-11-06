@@ -1,5 +1,5 @@
 # Locked-down Python execution image for the `sandbox` MCP server.
-# Build:  docker build -f docker/sandbox.Dockerfile -t polymath-sandbox:latest docker/sandbox
+# Build:  docker build -f docker/sandbox.Dockerfile -t ghcr.io/gnanasudharsan/polymath-sandbox:latest docker/sandbox
 # Run-time hardening (no network, read-only FS, limits, dropped caps) is applied by the
 # server's `docker run` flags; see src/polymath/mcp_servers/sandbox/docker.py.
 FROM python:3.12.16-slim

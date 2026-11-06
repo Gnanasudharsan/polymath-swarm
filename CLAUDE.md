@@ -12,8 +12,8 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 - Done: Phase 0 (v0.0.0), Phase 1 core runtime (v0.1.0), Phase 2 MCP tools (v0.2.0),
   Phase 3 orchestration (v0.3.0), Phase 4 specialists & verification (v0.4.0),
   Phase 5 memory & knowledge (v0.5.0), Phase 6 evals & observability (v0.6.0),
-  Phase 7 API & live UI (v0.7.0)
-- Next: Phase 8 — A2A, hardening, release. **Ask the user before starting** (cost/infra).
+  Phase 7 API & live UI (v0.7.0), Phase 8 A2A + hardening + release (v1.0.0)
+- All planned phases are complete. Future work: see "Known gaps" in PROGRESS.md.
 - User decisions for LLM work: OpenAI models (no Anthropic key on this machine), **$5 total cap**
   enforced by the spend ledger in `.env` (`.sandbox/spend.jsonl`). Phase 4 spent $0.80, Phase 5
   about $0.37, Phase 6 about $1.41 (ledger ≈ $2.58 after Phase 6). The OpenAI account itself ran
@@ -43,7 +43,7 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 - Each server: `polymath.mcp_servers.<name>.build_server(...)` (inject deps in tests) + `python -m ...`.
   Raise `ToolError` for user-facing failures (other exceptions are masked by the SDK).
 - `sympy/` — ops.py (screened `parse`, pure ops) run in a spawn child with timeout (runner.py).
-- `sandbox/` — `DockerSandbox.run(code, timeout_s)` → `SandboxResult`; image `polymath-sandbox:latest`.
+- `sandbox/` — `DockerSandbox.run(code, timeout_s)` → `SandboxResult`; image `ghcr.io/gnanasudharsan/polymath-sandbox:latest` (`docker compose --profile tools build sandbox`).
 - `literature/` — `create_literature(redis, httpx_client, settings)`; `HttpSource` = cache → rate limit
   → GET with 429/5xx retries; parsers in `sources.py` are pure.
 - `lean/` — `LeanREPL` (one container, Mathlib imported once, lock, restart on timeout);
@@ -115,6 +115,15 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
   proxy `src/app/api/polymath/[...path]/route.ts`. E2E: `frontend/e2e/solve.spec.ts`,
   `playwright.config.ts` (starts API on :8765 with `--mock-llm`, web on :3100). CI job `e2e`.
 
+## What exists (Phase 8)
+- `a2a/` — `cards.py` (swarm + specialist Agent Cards), `server.py` (`mount_a2a`: executors,
+  `/a2a`, `/agents/<role>/a2a`, key middleware), `client.py` (`A2ADelegate`; replies -> untrusted,
+  evidence-free claims). Settings `public_url`, `a2a_delegates`, `a2a_delegate_api_key`.
+- `security/untrusted.py` (`sanitize_untrusted`, `wrap_untrusted`); `api/ratelimit.py`.
+- `docker/api.Dockerfile`, `docker/web.Dockerfile`; compose profile `app`; `.github/workflows/
+  release.yml` pushes `ghcr.io/gnanasudharsan/polymath-{api,web,sandbox}` on `v*` tags.
+- `docs/security.md`, ADR-0010, `examples/a2a_client.py`, `docs/images/demo.gif` (RECORD=1 e2e).
+
 ## Gotchas
 - Claude 5.x rejects sampling params → gateway always passes `drop_params=True`.
 - Catch `openai.OpenAIError` (not `litellm.exceptions.OpenAIError`) as the base of LiteLLM API errors.
@@ -147,6 +156,11 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
   module-level (FastAPI resolves string annotations in module globals).
 - shadcn init wrote `--font-sans: var(--font-sans)` (self-reference -> serif fallback); keep it
   pointing at `--font-geist-sans`.
+- Edit scripts must `assert old in s` before replacing: an unmatched replace once silently dropped
+  the literature full-text path for a whole phase.
+- React Flow nodes rebuilt per render need explicit `width`/`height` or they flicker while
+  re-measuring.
+- A2A messages from a client must use `role=Role.ROLE_USER` (helpers default to the agent role).
 - zsh: don't put a command in a variable (`$R`) — it won't word-split; use a function.
 
 ## Architecture (target)

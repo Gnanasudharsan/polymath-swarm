@@ -16,6 +16,8 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${WEB_PORT}`,
     trace: "retain-on-failure",
+    // RECORD=1 records the run (used to make the README demo GIF).
+    video: process.env.RECORD ? { mode: "on", size: { width: 1440, height: 1000 } } : "off",
     viewport: { width: 1440, height: 1000 },
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 1000 } } }],

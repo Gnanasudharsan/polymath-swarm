@@ -20,7 +20,7 @@ from polymath.core.logging import get_logger
 
 log = get_logger(__name__)
 
-DEFAULT_IMAGE = "polymath-sandbox:latest"
+DEFAULT_IMAGE = "ghcr.io/gnanasudharsan/polymath-sandbox:latest"
 MAX_CODE_CHARS = 100_000
 
 

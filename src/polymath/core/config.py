@@ -111,7 +111,7 @@ class Settings(BaseSettings):
     memory_min_similarity: float = Field(default=0.80, ge=0.0, le=1.0)
 
     # Docker images for tool servers
-    sandbox_image: str = "polymath-sandbox:latest"
+    sandbox_image: str = "ghcr.io/gnanasudharsan/polymath-sandbox:latest"
     lean_image: str = "polymath-lean:v4.35.0"
 
     # Cross-run spend ledger (optional hard cap on cumulative LLM spend)
@@ -120,6 +120,12 @@ class Settings(BaseSettings):
 
     # HTTP API (Phase 7): clients send it as the `x-api-key` header
     api_key: SecretStr | None = None
+    public_url: str = "http://localhost:8000"  # advertised in A2A Agent Cards
+    api_writes_per_minute: int = Field(default=20, gt=0)
+    api_reads_per_minute: int = Field(default=600, gt=0)
+    # A2A delegation (Phase 8): route roles to external A2A agents, e.g. {"literature": "http://…"}
+    a2a_delegates: dict[AgentRole, str] = Field(default_factory=dict)
+    a2a_delegate_api_key: SecretStr | None = None
 
     # Default budget for a run
     budget: RunBudget = Field(default_factory=RunBudget)

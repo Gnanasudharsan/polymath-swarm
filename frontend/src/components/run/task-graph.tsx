@@ -15,6 +15,9 @@ const STATUS_STYLE: Record<TaskStatus, { bg: string; border: string; label: stri
   skipped: { bg: "#f4f4f5", border: "#a1a1aa", label: "skipped" },
 };
 
+const NODE_W = 190;
+const NODE_H = 72;
+
 /** Longest-path layering: a task's column is one more than its deepest dependency. */
 export function layout(tasks: TaskInfo[]): Record<string, { x: number; y: number }> {
   const byId = new Map(tasks.map((t) => [t.id, t]));
@@ -69,10 +72,15 @@ export function TaskGraph({
           background: s.bg,
           border: `2px solid ${s.border}`,
           borderRadius: 10,
-          width: 190,
+          width: NODE_W,
+          height: NODE_H,
           boxShadow: st === "running" ? `0 0 0 4px ${s.border}33` : undefined,
         },
         draggable: false,
+        // Explicit size: nodes are rebuilt on every status change, and without known dimensions
+        // React Flow hides them until re-measured (a visible flicker).
+        width: NODE_W,
+        height: NODE_H,
         // Columns run left to right, so connect right side → left side.
         sourcePosition: Position.Right,
         targetPosition: Position.Left,

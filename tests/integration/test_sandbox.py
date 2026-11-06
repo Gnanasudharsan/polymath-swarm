@@ -1,6 +1,6 @@
 """Docker-backed sandbox tests, including escape attempts.
 
-Needs the image: docker build -f docker/sandbox.Dockerfile -t polymath-sandbox:latest docker/sandbox
+Needs the image: docker compose --profile tools build sandbox
 """
 
 from __future__ import annotations
