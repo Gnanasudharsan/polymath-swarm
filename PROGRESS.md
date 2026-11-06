@@ -15,7 +15,7 @@
   them); task-graph flicker in the UI
 
 **Metrics**: 215 unit tests, 38 integration tests, 1 e2e test. Clean-machine check: fresh clone, only
-the README's steps, both quickstart options. Ledger at release: see CHANGELOG.
+the README's steps, both quickstart options passed. Total LLM spend for the whole project: about 2.62 USD of the 5 USD cap (Phase 4: 0.80, Phase 5: 0.37, Phase 6: 1.41, Phase 8: 0.04; Phases 0-3 and 7: about 0).
 
 **Known gaps**: single shared API key; per-process rate limits; Lean image not published (15 GB);
 Anthropic profile untested live; small eval samples.

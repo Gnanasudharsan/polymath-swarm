@@ -16,7 +16,7 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 - All planned phases are complete. Future work: see "Known gaps" in PROGRESS.md.
 - User decisions for LLM work: OpenAI models (no Anthropic key on this machine), **$5 total cap**
   enforced by the spend ledger in `.env` (`.sandbox/spend.jsonl`). Phase 4 spent $0.80, Phase 5
-  about $0.37, Phase 6 about $1.41 (ledger ≈ $2.58 after Phase 6). The OpenAI account itself ran
+  about $0.37, Phase 6 about $1.41, Phase 8 about $0.04 (ledger ≈ $2.62 at v1.0.0). The OpenAI account itself ran
   out of credit once mid-eval (user topped up); `QuotaExhaustedError` now fails fast.
 
 ## What exists (Phase 1)
