@@ -27,8 +27,11 @@ CREATE INDEX IF NOT EXISTS polymath_events_run_seq ON polymath_events (run_id, s
 class EventStore(Protocol):
     async def append(self, event: BlackboardEvent) -> None: ...
     async def list(self, run_id: str) -> list[BlackboardEvent]: ...
-    async def recent_runs(self, limit: int = 50) -> builtins.list[BlackboardEvent]:
-        """The ``run_started`` events of the most recent runs, newest first."""
+    async def recent_runs(
+        self, limit: int = 50, owner: str | None = None
+    ) -> builtins.list[BlackboardEvent]:
+        """The ``run_started`` events of the most recent runs, newest first (optionally only
+        runs started by ``owner``)."""
         ...
 
 
@@ -42,8 +45,11 @@ class InMemoryEventStore:
     async def list(self, run_id: str) -> list[BlackboardEvent]:
         return list(self._events[run_id])
 
-    async def recent_runs(self, limit: int = 50) -> builtins.list[BlackboardEvent]:
-        starts = [e for evs in self._events.values() for e in evs if e.kind.value == "run_started"]
+    async def recent_runs(
+        self, limit: int = 50, owner: str | None = None
+    ) -> builtins.list[BlackboardEvent]:
+        starts = [e for evs in self._events.values() for e in evs if e.kind.value == "run_started"
+                  and (owner is None or e.payload.get("owner") == owner)]  # fmt: skip
         return sorted(starts, key=lambda e: e.created_at, reverse=True)[:limit]
 
 
@@ -76,12 +82,15 @@ class PostgresEventStore:
             for r in rows
         ]
 
-    async def recent_runs(self, limit: int = 50) -> builtins.list[BlackboardEvent]:
+    async def recent_runs(
+        self, limit: int = 50, owner: str | None = None
+    ) -> builtins.list[BlackboardEvent]:
         async with self.pool.connection() as conn:
             cur = await conn.execute(
                 "SELECT id, run_id, kind, payload, created_at FROM polymath_events "
-                "WHERE kind = 'run_started' ORDER BY created_at DESC LIMIT %s",
-                (limit,),
+                "WHERE kind = 'run_started' AND (%s::text IS NULL OR payload->>'owner' = %s) "
+                "ORDER BY created_at DESC LIMIT %s",
+                (owner, owner, limit),
             )
             rows = await cur.fetchall()
         return [

@@ -46,11 +46,13 @@ class RunManager:
     def busy(self, run_id: str) -> bool:
         return run_id in self._tasks
 
-    async def start(self, problem: str, budget: RunBudget, require_approval: bool) -> str:
+    async def start(
+        self, problem: str, budget: RunBudget, require_approval: bool, owner: str | None = None
+    ) -> str:
         run_id = new_id("run")
         coro = self.runner.start(
             Problem(statement=problem), budget=budget, run_id=run_id,
-            require_approval=require_approval,
+            require_approval=require_approval, owner=owner,
         )  # fmt: skip
         self._spawn(run_id, coro)
         # Wait until run_started is on the blackboard so the run is immediately listable.
@@ -83,8 +85,20 @@ class RunManager:
         except KeyError as exc:
             raise RunNotFoundError(run_id) from exc
 
-    async def list(self, limit: int = 50) -> list[RunSummary]:
-        starts = await self.blackboard.store.recent_runs(limit)
+    async def owner_of(self, run_id: str) -> str | None:
+        """The user who started the run; raises ``RunNotFoundError`` for unknown runs."""
+        events = await self.blackboard.history(run_id)
+        if not events:
+            try:
+                await self.runner.snapshot(run_id)
+            except KeyError:
+                raise RunNotFoundError(run_id) from None
+            return None
+        owner = events[0].payload.get("owner")
+        return owner if isinstance(owner, str) else None
+
+    async def list(self, limit: int = 50, owner: str | None = None) -> list[RunSummary]:
+        starts = await self.blackboard.store.recent_runs(limit, owner=owner)
         out = []
         for e in starts:
             try:

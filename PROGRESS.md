@@ -1,5 +1,19 @@
 # Progress
 
+## v1.1.0 — API users and shared rate limits (2026-11-06)
+
+**Shipped** (closes two v1.0 known gaps)
+- Named API users with SHA-256-hashed keys, admins, `polymath keys new`, `GET /me`
+- Run ownership over REST and A2A: non-admins see only their own runs; others' runs return 404
+- Redis-backed sliding-window rate limiter shared by all API replicas (atomic Lua script, Redis
+  clock, fails open); on in the compose app stack
+- ADR-0011; README, security doc and `.env.example` updated
+
+**Metrics**: 222 unit tests, 40 integration tests. LLM spend: 0 USD (ledger unchanged at 2.62 of 5 USD).
+
+**Still open**: Lean image not published (about 15 GB); Anthropic profile untested live (no key);
+small eval samples; no per-user spend quotas.
+
 ## Phase 8 — A2A interop, hardening, release (2026-11-06)
 
 **Shipped**

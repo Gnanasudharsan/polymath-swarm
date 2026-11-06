@@ -125,3 +125,26 @@ async def test_live_events_over_redis() -> None:
         assert seen[-1] is EventKind.RUN_FINISHED
         assert seen.count(EventKind.TASK_FINISHED) == 3
         assert len(await infra.blackboard.history(run_id)) >= len(seen)
+
+
+async def test_recent_runs_filters_by_owner_in_postgres() -> None:
+    from polymath.core.models import BlackboardEvent
+
+    tag = os.urandom(4).hex()
+    owners = {f"run_own_{tag}_a": f"alice-{tag}", f"run_own_{tag}_b": f"bob-{tag}",
+              f"run_own_{tag}_c": None}  # fmt: skip
+    async with swarm_infra(SETTINGS) as infra:
+        store = infra.blackboard.store
+        try:
+            for run_id, owner in owners.items():
+                payload = {"problem": {"statement": "p"}} | ({"owner": owner} if owner else {})
+                await store.append(BlackboardEvent(run_id=run_id, kind=EventKind.RUN_STARTED,
+                                                   payload=payload))  # fmt: skip
+            alice = await store.recent_runs(50, owner=f"alice-{tag}")
+            assert [e.run_id for e in alice] == [f"run_own_{tag}_a"]
+            everyone = {e.run_id for e in await store.recent_runs(200)}
+            assert set(owners) <= everyone
+        finally:
+            async with store.pool.connection() as conn:  # type: ignore[attr-defined]
+                await conn.execute("DELETE FROM polymath_events WHERE run_id LIKE %s",
+                                   (f"run_own_{tag}_%",))  # fmt: skip

@@ -72,15 +72,15 @@ async def test_literature_prompt_marks_injected_abstracts(settings: Settings) ->
     assert prompt.count("</paper>") == 1
 
 
-def test_sliding_window_limiter() -> None:
+async def test_sliding_window_limiter() -> None:
     now = [0.0]
     lim = SlidingWindowLimiter(2, window_s=60, clock=lambda: now[0])
-    assert lim.check("a") is None and lim.check("a") is None
-    wait = lim.check("a")
+    assert await lim.check("a") is None and await lim.check("a") is None
+    wait = await lim.check("a")
     assert wait is not None and 0 < wait <= 60
-    assert lim.check("b") is None  # separate clients
+    assert await lim.check("b") is None  # separate clients
     now[0] = 61
-    assert lim.check("a") is None
+    assert await lim.check("a") is None
 
 
 @pytest.fixture

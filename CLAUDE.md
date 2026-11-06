@@ -12,7 +12,8 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 - Done: Phase 0 (v0.0.0), Phase 1 core runtime (v0.1.0), Phase 2 MCP tools (v0.2.0),
   Phase 3 orchestration (v0.3.0), Phase 4 specialists & verification (v0.4.0),
   Phase 5 memory & knowledge (v0.5.0), Phase 6 evals & observability (v0.6.0),
-  Phase 7 API & live UI (v0.7.0), Phase 8 A2A + hardening + release (v1.0.0)
+  Phase 7 API & live UI (v0.7.0), Phase 8 A2A + hardening + release (v1.0.0),
+  v1.1.0 API users + shared Redis rate limits
 - All planned phases are complete. Future work: see "Known gaps" in PROGRESS.md.
 - User decisions for LLM work: OpenAI models (no Anthropic key on this machine), **$5 total cap**
   enforced by the spend ledger in `.env` (`.sandbox/spend.jsonl`). Phase 4 spent $0.80, Phase 5
@@ -123,6 +124,18 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 - `docker/api.Dockerfile`, `docker/web.Dockerfile`; compose profile `app`; `.github/workflows/
   release.yml` pushes `ghcr.io/gnanasudharsan/polymath-{api,web,sandbox}` on `v*` tags.
 - `docs/security.md`, ADR-0010, `examples/a2a_client.py`, `docs/images/demo.gif` (RECORD=1 e2e).
+
+## What exists (v1.1)
+- `api/auth.py` — `KeyRing` (user → `sha256:` hash; legacy `api_key` = user `admin`), `Principal`
+  (`can_see(owner)`), `hash_key`, `new_key`. `polymath keys new USER` (in `cli_serve.py`).
+- Runs record `owner` in the `run_started` payload (`SwarmRunner.start(owner=)`,
+  `EventStore.recent_runs(owner=)`); `api/app.py` `_visible()` returns 404 for others' runs.
+- A2A: `A2AKeyMiddleware` puts the `Principal` in `scope["polymath.principal"]`;
+  `PrincipalContextBuilder` moves it into `call_context.state` (drops `x-api-key` from headers;
+  don't drop all headers, the SDK reads the A2A version header from them).
+- `api/ratelimit.py` — async `Limiter` protocol; `RedisSlidingWindowLimiter` (Lua, fails open);
+  `build_limiters(backend=...)`. fakeredis can't run Lua here (no `lupa`): Redis test is integration.
+- Settings `env_ignore_empty=True`.
 
 ## Gotchas
 - Claude 5.x rejects sampling params → gateway always passes `drop_params=True`.

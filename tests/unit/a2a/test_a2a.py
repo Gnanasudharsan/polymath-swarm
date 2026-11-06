@@ -15,6 +15,7 @@ from google.protobuf.json_format import MessageToDict
 from polymath.a2a.client import A2ADelegate
 from polymath.agents.base import AgentContext
 from polymath.api.app import create_app
+from polymath.api.auth import hash_key
 from polymath.api.runs import RunManager
 from polymath.blackboard import Blackboard, InMemoryEventStore
 from polymath.core.config import Settings
@@ -28,7 +29,7 @@ KEY = "a2a-key"
 BASE = "http://swarm.test"
 
 
-def _app() -> FastAPI:
+def _app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def factory() -> AsyncIterator[RunManager]:
         bb = Blackboard(InMemoryEventStore())
@@ -41,21 +42,21 @@ def _app() -> FastAPI:
 
         yield RunManager(SwarmRunner(compile_graph(memory_checkpointer()), ctx, bb), bb)
 
-    settings = Settings(_env_file=None, api_key=KEY, public_url=BASE)  # type: ignore[call-arg]
+    settings = settings or Settings(_env_file=None, api_key=KEY, public_url=BASE)  # type: ignore[call-arg]
     return create_app(settings, factory)
 
 
 @asynccontextmanager
-async def served() -> AsyncIterator[httpx.AsyncClient]:
-    app = _app()
+async def served(settings: Settings | None = None) -> AsyncIterator[httpx.AsyncClient]:
+    app = _app(settings)
     async with app.router.lifespan_context(app):
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(transport=transport, base_url=BASE, timeout=30) as http:
             yield http
 
 
-async def _send(http: httpx.AsyncClient, url: str, text: str) -> list:  # type: ignore[type-arg]
-    http.headers["x-api-key"] = KEY
+async def _send(http: httpx.AsyncClient, url: str, text: str, key: str = KEY) -> list:  # type: ignore[type-arg]
+    http.headers["x-api-key"] = key
     client = await ClientFactory(ClientConfig(httpx_client=http, streaming=False)).create_from_url(
         url
     )
@@ -123,3 +124,16 @@ async def test_delegation_is_configured_per_role() -> None:
     executors = ctx(BudgetTracker(RunBudget())).executors
     assert isinstance(executors[AgentRole.LITERATURE], A2ADelegate)
     assert not isinstance(executors[AgentRole.REASONER], A2ADelegate)
+
+
+async def test_a2a_runs_belong_to_the_calling_user() -> None:
+    users = {"alice": hash_key("ka"), "bob": hash_key("kb")}
+    settings = Settings(_env_file=None, api_users=users, public_url=BASE)  # type: ignore[call-arg]
+    async with served(settings) as http:
+        (resp,) = await _send(http, BASE, "toy problem", key="ka")
+        run_id = MessageToDict(resp)["task"]["artifacts"][1]["parts"][0]["data"]["run_id"]
+        alice = (await http.get("/runs", headers={"x-api-key": "ka"})).json()["runs"]
+        bob = (await http.get("/runs", headers={"x-api-key": "kb"})).json()["runs"]
+        assert (await http.get(f"/runs/{run_id}", headers={"x-api-key": "kb"})).status_code == 404
+        assert (await http.post("/a2a", json={}, headers={"x-api-key": "wrong"})).status_code == 401
+    assert [r["run_id"] for r in alice] == [run_id] and bob == []

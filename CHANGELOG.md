@@ -3,6 +3,19 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow SemVer.
 
+## [1.1.0] - 2026-11-06
+
+### Added
+- Named API users (`POLYMATH_API_USERS`, SHA-256-hashed keys) and admins (`POLYMATH_API_ADMINS`);
+  `polymath keys new <user>`; `GET /me`.
+- Run ownership: REST and A2A runs record their owner; non-admins see only their own runs (others
+  get 404). The v1.0 `POLYMATH_API_KEY` still works as the user `admin`.
+- Redis-backed rate limiter shared across API replicas (`POLYMATH_RATE_LIMIT_BACKEND=redis`, on in
+  the compose app stack). ADR-0011.
+
+### Changed
+- Empty environment variables are ignored by settings (compose passes unset values as empty strings).
+
 ## [1.0.0] - 2026-11-06
 
 ### Added

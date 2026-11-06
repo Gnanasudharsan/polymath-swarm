@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
-import hmac
 from collections.abc import Callable
 from typing import Any
 
 from a2a import helpers
 from a2a.server.agent_execution import AgentExecutor, RequestContext
+from a2a.server.context import ServerCallContext
 from a2a.server.events import EventQueue
 from a2a.server.request_handlers import DefaultRequestHandler
 from a2a.server.routes import (
+    DefaultServerCallContextBuilder,
     add_a2a_routes_to_fastapi,
     create_agent_card_routes,
     create_jsonrpc_routes,
@@ -23,6 +24,7 @@ from starlette.responses import Response
 
 from polymath.a2a.cards import SPECIALISTS, specialist_card, swarm_card
 from polymath.agents.base import AgentContext
+from polymath.api.auth import SCOPE_KEY, KeyRing, Principal
 from polymath.core.budget import BudgetTracker
 from polymath.core.logging import get_logger
 from polymath.core.models import AgentRole, Problem, RunBudget, Task, TaskType
@@ -40,6 +42,23 @@ def _text_input(context: RequestContext) -> str:
     if not text:
         raise ValueError("send the problem as a text part")
     return text[:MAX_INPUT_CHARS]
+
+
+class PrincipalContextBuilder(DefaultServerCallContextBuilder):
+    """Carries the user that ``A2AKeyMiddleware`` authenticated into the executor."""
+
+    def build(self, request: Request) -> ServerCallContext:
+        ctx = super().build(request)
+        headers = ctx.state.get("headers")
+        if isinstance(headers, dict):
+            headers.pop("x-api-key", None)  # never keep the raw API key around
+        ctx.state["principal"] = request.scope.get(SCOPE_KEY)
+        return ctx
+
+
+def _owner(context: RequestContext) -> str | None:
+    who = context.call_context.state.get("principal")
+    return who.user if isinstance(who, Principal) else None
 
 
 async def _begin(context: RequestContext, queue: EventQueue) -> TaskUpdater:
@@ -63,7 +82,8 @@ class SwarmAgentExecutor(AgentExecutor):
     async def execute(self, context: RequestContext, event_queue: EventQueue) -> None:
         updater = await _begin(context, event_queue)
         problem = _text_input(context)
-        snap = await self.get_runner().start(Problem(statement=problem), budget=self.budget)
+        snap = await self.get_runner().start(Problem(statement=problem), budget=self.budget,
+                                             owner=_owner(context))  # fmt: skip
         values = snap.values
         markdown = values.get("report_markdown") or values.get("answer") or "(no answer)"
         await updater.add_artifact([helpers.new_text_part(markdown, media_type="text/markdown")],
@@ -106,30 +126,32 @@ class SpecialistAgentExecutor(AgentExecutor):
 class A2AKeyMiddleware(BaseHTTPMiddleware):
     """A2A JSON-RPC endpoints need the API key; Agent Cards stay public for discovery."""
 
-    def __init__(self, app: Any, api_key: str) -> None:
+    def __init__(self, app: Any, keys: KeyRing) -> None:
         super().__init__(app)
-        self.api_key = api_key
+        self.keys = keys
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         path = request.url.path
         guarded = path == "/a2a" or (path.startswith("/agents/") and path.endswith("/a2a"))
         if guarded:
-            given = request.headers.get("x-api-key", "")
-            if not given or not hmac.compare_digest(given, self.api_key):
+            who = self.keys.authenticate(request.headers.get("x-api-key"))
+            if who is None:
                 return JSONResponse({"detail": "missing or invalid API key"}, status_code=401)
+            request.scope[SCOPE_KEY] = who
         return await call_next(request)
 
 
 def mount_a2a(
-    app: FastAPI, get_runner: RunnerGetter, *, base_url: str, budget: RunBudget, api_key: str
+    app: FastAPI, get_runner: RunnerGetter, *, base_url: str, budget: RunBudget, keys: KeyRing
 ) -> None:
     """Routes are mounted at app creation; the runner exists only once the lifespan has started,
     so executors resolve it through ``get_runner`` on each request."""
     card = swarm_card(base_url)
     swarm = DefaultRequestHandler(agent_executor=SwarmAgentExecutor(get_runner, budget),
                                   task_store=InMemoryTaskStore(), agent_card=card)  # fmt: skip
+    rpc = create_jsonrpc_routes(swarm, "/a2a", PrincipalContextBuilder())
     add_a2a_routes_to_fastapi(app, agent_card_routes=create_agent_card_routes(card),
-                              jsonrpc_routes=create_jsonrpc_routes(swarm, "/a2a"))  # fmt: skip
+                              jsonrpc_routes=rpc)  # fmt: skip
     for role in SPECIALISTS:
         scard = specialist_card(role, base_url)
         handler = DefaultRequestHandler(
@@ -142,6 +164,8 @@ def mount_a2a(
             agent_card_routes=create_agent_card_routes(
                 scard, card_url=f"{prefix}/.well-known/agent-card.json"
             ),
-            jsonrpc_routes=create_jsonrpc_routes(handler, f"{prefix}/a2a"),
+            jsonrpc_routes=create_jsonrpc_routes(
+                handler, f"{prefix}/a2a", PrincipalContextBuilder()
+            ),
         )
-    app.add_middleware(A2AKeyMiddleware, api_key=api_key)
+    app.add_middleware(A2AKeyMiddleware, keys=keys)
