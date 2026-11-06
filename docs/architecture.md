@@ -48,7 +48,7 @@ flowchart TD
 | Blackboard | `polymath.blackboard` | Redis pub/sub for live events, Postgres for durable history | 3 |
 | Memory | `polymath.memory` | pgvector paper chunks, hybrid retrieval, episodic memory, claims store; `knowledge` MCP server | 5 |
 | Interop | `polymath.a2a` | A2A Agent Cards, server and client | 8 |
-| API | `polymath.api` | FastAPI, SSE run streaming, API-key auth | 7 |
+| API | `polymath.api` | FastAPI, SSE run streaming, plan approval, API-key auth, mock-LLM mode | 7 |
 | Frontend | `frontend/` | Next.js + React Flow live task graph, claim panel, cost meter | 7 |
 
 ## Orchestration graph (LangGraph)
@@ -175,6 +175,20 @@ self-hosted under the `observability` compose profile.
 
 `polymath eval` compares a single-agent baseline with the swarm on miniF2F, MATH Level 5 and research
 QA, using deterministic scorers; see ADR-0008 and `evals/reports/`.
+
+## API & web UI (Phase 7)
+
+```mermaid
+flowchart LR
+    B[Browser] -->|fetch / EventSource| P[Next.js proxy<br/>adds x-api-key]
+    P --> A[FastAPI<br/>RunManager]
+    A -->|start / resume| G[LangGraph swarm]
+    G --> BB[(Blackboard events)]
+    A -->|SSE: replay + follow| BB
+    A -->|run detail| CP[(Checkpointer)]
+```
+
+See ADR-0009. `polymath serve --mock-llm` gives a free scripted run for UI work and the Playwright e2e.
 
 ## Infrastructure (dev)
 

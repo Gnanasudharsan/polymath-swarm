@@ -118,6 +118,9 @@ class Settings(BaseSettings):
     spend_ledger: Path | None = None
     spend_cap_usd: float | None = Field(default=None, gt=0)
 
+    # HTTP API (Phase 7): clients send it as the `x-api-key` header
+    api_key: SecretStr | None = None
+
     # Default budget for a run
     budget: RunBudget = Field(default_factory=RunBudget)
 

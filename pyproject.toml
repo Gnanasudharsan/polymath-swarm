@@ -1,6 +1,6 @@
 [project]
 name = "polymath"
-version = "0.6.0"
+version = "0.7.0"
 description = "Verification-first multi-agent swarm for research and mathematics (LangGraph + MCP + A2A + Lean 4)"
 readme = "README.md"
 license = "MIT"
@@ -9,6 +9,7 @@ authors = [{ name = "Gnanasudharsan Ashokumar" }]
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "defusedxml==0.7.1",
+    "fastapi==0.162.0",
     "fastembed==0.9.1",
     "httpx==0.28.1",
     "langchain-core==1.7.6",
@@ -28,9 +29,11 @@ dependencies = [
     "pypdf==6.21.4",
     "python-dotenv==1.2.4",
     "redis==8.1.0",
+    "sse-starlette==3.6.0",
     "structlog==26.1.0",
     "sympy==1.14.0",
     "typer==0.27.3",
+    "uvicorn==0.54.0",
 ]
 
 [project.scripts]

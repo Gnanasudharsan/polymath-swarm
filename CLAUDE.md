@@ -11,9 +11,9 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 ## Current phase
 - Done: Phase 0 (v0.0.0), Phase 1 core runtime (v0.1.0), Phase 2 MCP tools (v0.2.0),
   Phase 3 orchestration (v0.3.0), Phase 4 specialists & verification (v0.4.0),
-  Phase 5 memory & knowledge (v0.5.0), Phase 6 evals & observability (v0.6.0)
-- Next: Phase 7 — API & live frontend (`phase-7-ui`). `frontend/` is scaffolded (Next 16) and
-  builds; FastAPI backend + mock-LLM mode + Playwright run still to do.
+  Phase 5 memory & knowledge (v0.5.0), Phase 6 evals & observability (v0.6.0),
+  Phase 7 API & live UI (v0.7.0)
+- Next: Phase 8 — A2A, hardening, release. **Ask the user before starting** (cost/infra).
 - User decisions for LLM work: OpenAI models (no Anthropic key on this machine), **$5 total cap**
   enforced by the spend ledger in `.env` (`.sandbox/spend.jsonl`). Phase 4 spent $0.80, Phase 5
   about $0.37, Phase 6 about $1.41 (ledger ≈ $2.58 after Phase 6). The OpenAI account itself ran
@@ -105,6 +105,16 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
   retrieval}.py`. Report: `evals/reports/2026-11-05/`.
 - Planner v2 routes value questions to compute (not formalization).
 
+## What exists (Phase 7)
+- `api/` — `app.py` (`create_app(settings, manager_factory)`; `x-api-key` auth; routes runs/stream/
+  approve/resume/health), `runs.py` (`RunManager`: background tasks, `to_detail`, SSE by polling the
+  store), `schemas.py` (mirrored in `frontend/src/lib/types.ts`). `cli_serve.py`: `polymath serve
+  [--memory] [--mock-llm]`. `llm/mock.py`: `ScriptedLLM` (scripted computation run, $0).
+- `frontend/` — Next 16 app: `src/app/page.tsx`, `src/app/runs/[id]/page.tsx`,
+  `src/components/run/*` (task-graph, claim-panel, cost-meter, approval-panel, report-view, run-view),
+  proxy `src/app/api/polymath/[...path]/route.ts`. E2E: `frontend/e2e/solve.spec.ts`,
+  `playwright.config.ts` (starts API on :8765 with `--mock-llm`, web on :3100). CI job `e2e`.
+
 ## Gotchas
 - Claude 5.x rejects sampling params → gateway always passes `drop_params=True`.
 - Catch `openai.OpenAIError` (not `litellm.exceptions.OpenAIError`) as the base of LiteLLM API errors.
@@ -133,6 +143,10 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 - Next 16 (frontend): `params` are Promises; `cacheComponents` is on, so no `dynamic` segment
   config — wrap request-time reads in `<Suspense>`; `middleware` is now `proxy`. Read
   `frontend/node_modules/next/dist/docs/` before changing Next code.
+- FastAPI + `from __future__ import annotations`: `Annotated[..., Depends(...)]` aliases must be
+  module-level (FastAPI resolves string annotations in module globals).
+- shadcn init wrote `--font-sans: var(--font-sans)` (self-reference -> serif fallback); keep it
+  pointing at `--font-geist-sans`.
 - zsh: don't put a command in a variable (`$R`) — it won't word-split; use a function.
 
 ## Architecture (target)

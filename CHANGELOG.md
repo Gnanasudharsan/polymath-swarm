@@ -3,6 +3,14 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow SemVer.
 
+## [0.7.0] - 2026-11-06
+
+### Added
+- FastAPI service with run creation, inspection, plan approval, resume and SSE streaming; API-key auth.
+- `polymath serve` (with `--memory` and a deterministic `--mock-llm` mode).
+- Next.js web UI: live task graph, claims with evidence badges, cost meter, plan approval, KaTeX report.
+- Playwright end-to-end test and CI job; README screenshots; ADR-0009.
+
 ## [0.6.0] - 2026-11-05
 
 ### Added
