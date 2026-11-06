@@ -111,7 +111,7 @@ class Settings(BaseSettings):
     memory_min_similarity: float = Field(default=0.80, ge=0.0, le=1.0)
 
     # Docker images for tool servers
-    sandbox_image: str = "polymath-sandbox:latest"
+    sandbox_image: str = "ghcr.io/gnanasudharsan/polymath-sandbox:latest"
     lean_image: str = "polymath-lean:v4.35.0"
 
     # Cross-run spend ledger (optional hard cap on cumulative LLM spend)

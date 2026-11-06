@@ -1,0 +1,12 @@
+.venv
+.git
+.sandbox
+frontend
+node_modules
+evals/datasets/cache
+evals/reports
+examples
+docs
+tests
+**/__pycache__
+.env

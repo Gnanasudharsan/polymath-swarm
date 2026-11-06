@@ -38,8 +38,8 @@ services:
     restart: unless-stopped
 
   sandbox:
-    profiles: ["tools"]
-    image: polymath-sandbox:latest
+    profiles: ["tools", "app"]
+    image: ${POLYMATH_SANDBOX_IMAGE:-ghcr.io/gnanasudharsan/polymath-sandbox:latest}
     build:
       context: ./docker/sandbox
       dockerfile: ../sandbox.Dockerfile
@@ -54,6 +54,57 @@ services:
       dockerfile: ../lean.Dockerfile
     network_mode: none
     entrypoint: ["true"]
+
+  # ---------------------------------------------------------------- app (profile)
+  # One command for the whole stack:  docker compose --profile app up -d --build
+  # API on http://localhost:8000 (A2A card at /.well-known/agent-card.json), UI on :3100.
+  api:
+    profiles: ["app"]
+    image: ${POLYMATH_API_IMAGE:-ghcr.io/gnanasudharsan/polymath-api:latest}
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      sandbox: {condition: service_completed_successfully}
+    environment:
+      POLYMATH_API_KEY: ${POLYMATH_API_KEY:-}
+      POLYMATH_POSTGRES_DSN: postgresql://polymath:polymath@postgres:5432/polymath
+      POLYMATH_REDIS_URL: redis://redis:6379/0
+      POLYMATH_PUBLIC_URL: ${POLYMATH_PUBLIC_URL:-http://localhost:8000}
+      POLYMATH_MODEL_PROFILE: ${POLYMATH_MODEL_PROFILE:-anthropic}
+      POLYMATH_SANDBOX_IMAGE: ${POLYMATH_SANDBOX_IMAGE:-ghcr.io/gnanasudharsan/polymath-sandbox:latest}
+      POLYMATH_LEAN_IMAGE: ${POLYMATH_LEAN_IMAGE:-polymath-lean:v4.35.0}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      SEMANTIC_SCHOLAR_API_KEY: ${SEMANTIC_SCHOLAR_API_KEY:-}
+      LANGFUSE_HOST: ${LANGFUSE_HOST:-}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+    volumes:
+      # The API starts sandbox / Lean containers through the host's Docker (see docs/security.md).
+      - /var/run/docker.sock:/var/run/docker.sock
+      - models:/root/.cache/polymath
+    ports:
+      - "127.0.0.1:${POLYMATH_API_PORT:-8000}:8000"
+    restart: unless-stopped
+
+  web:
+    profiles: ["app"]
+    image: ${POLYMATH_WEB_IMAGE:-ghcr.io/gnanasudharsan/polymath-web:latest}
+    build:
+      context: ./frontend
+      dockerfile: ../docker/web.Dockerfile
+    depends_on:
+      api: {condition: service_healthy}
+    environment:
+      POLYMATH_API_URL: http://api:8000
+      POLYMATH_API_KEY: ${POLYMATH_API_KEY:-}
+    ports:
+      - "127.0.0.1:${POLYMATH_WEB_PORT:-3100}:3000"
+    restart: unless-stopped
 
   # ---------------------------------------------------------------- observability (profile)
   # Self-hosted Langfuse v4 (adapted from langfuse/langfuse v4.76.0 docker-compose.yml) with its
@@ -193,3 +244,4 @@ volumes:
   lf_minio:
   lf_redis:
   lf_postgres:
+  models:

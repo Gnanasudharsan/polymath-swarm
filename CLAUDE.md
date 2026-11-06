@@ -43,7 +43,7 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 - Each server: `polymath.mcp_servers.<name>.build_server(...)` (inject deps in tests) + `python -m ...`.
   Raise `ToolError` for user-facing failures (other exceptions are masked by the SDK).
 - `sympy/` — ops.py (screened `parse`, pure ops) run in a spawn child with timeout (runner.py).
-- `sandbox/` — `DockerSandbox.run(code, timeout_s)` → `SandboxResult`; image `polymath-sandbox:latest`.
+- `sandbox/` — `DockerSandbox.run(code, timeout_s)` → `SandboxResult`; image `ghcr.io/gnanasudharsan/polymath-sandbox:latest` (`docker compose --profile tools build sandbox`).
 - `literature/` — `create_literature(redis, httpx_client, settings)`; `HttpSource` = cache → rate limit
   → GET with 429/5xx retries; parsers in `sources.py` are pure.
 - `lean/` — `LeanREPL` (one container, Mathlib imported once, lock, restart on timeout);
