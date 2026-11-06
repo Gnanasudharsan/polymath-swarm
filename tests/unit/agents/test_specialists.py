@@ -242,3 +242,32 @@ def test_backtranslation_context_includes_definitions_not_proofs() -> None:
     assert "def EvenN (n : Nat) : Prop := True" in ctx  # the vacuous definition is exposed
     assert "helper" not in ctx and "trivial" not in ctx
     assert ctx.endswith("theorem t : ∀ n : Nat, EvenN (n * (n + 1))")
+
+
+async def test_literature_cites_full_text_passages_when_knowledge_is_mounted(
+    settings: Settings,
+) -> None:
+    """Regression: Phase 5 shipped the passage helpers but run() never called them."""
+    paper = Paper(source="arxiv", source_id="2303.09521", arxiv_id="2303.09521",
+                  title="An exponential improvement for diagonal Ramsey",
+                  abstract="We prove an exponential improvement.", year=2023)  # fmt: skip
+    body = (
+        "The key new ingredient is a book algorithm which finds large monochromatic books in "
+        "any two-colouring of the edges of the complete graph."
+    )
+    tools = FakeTools(search_hits=[paper], full_texts={"arxiv:2303.09521": body})
+    replies = [
+        {"queries": [{"source": "arxiv", "query": "diagonal ramsey book algorithm"}]},
+        {"summary": "s", "findings": [{
+            "statement": "The proof uses a book algorithm.", "paper": 2,
+            "quote": "a book algorithm which finds large monochromatic books", "confidence": 0.8}]},
+    ]  # fmt: skip
+    gw, fake = gateway(settings, replies)
+    res = await LiteratureAgent(gw, tools).run(
+        _task(AgentRole.LITERATURE, TaskType.LITERATURE_SEARCH), AgentContext(problem=PROBLEM)
+    )
+    assert tools.ingested == ["2303.09521"]  # the top arXiv hit was ingested
+    assert "Full-text passage" in fake.calls[1]["messages"][-1]["content"]
+    (claim,) = res.claims
+    payload = claim.evidence[0].payload
+    assert payload["location"] == "full_text" and payload["paper_id"] == "2303.09521"

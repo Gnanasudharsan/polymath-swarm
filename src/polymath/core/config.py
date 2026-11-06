@@ -121,6 +121,8 @@ class Settings(BaseSettings):
     # HTTP API (Phase 7): clients send it as the `x-api-key` header
     api_key: SecretStr | None = None
     public_url: str = "http://localhost:8000"  # advertised in A2A Agent Cards
+    api_writes_per_minute: int = Field(default=20, gt=0)
+    api_reads_per_minute: int = Field(default=600, gt=0)
     # A2A delegation (Phase 8): route roles to external A2A agents, e.g. {"literature": "http://…"}
     a2a_delegates: dict[AgentRole, str] = Field(default_factory=dict)
     a2a_delegate_api_key: SecretStr | None = None

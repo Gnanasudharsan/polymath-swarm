@@ -13,6 +13,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from polymath import __version__
 from polymath.a2a.server import mount_a2a
+from polymath.api.ratelimit import RateLimitMiddleware
 from polymath.api.runs import RunBusyError, RunManager, RunNotFoundError
 from polymath.api.schemas import Accepted, Created, CreateRun, Decision, RunDetail, RunList
 from polymath.core.config import Settings
@@ -54,6 +55,11 @@ def create_app(
         base_url=settings.public_url,
         budget=RunBudget.model_validate(settings.budget.model_dump()),
         api_key=api_key,
+    )
+    app.add_middleware(
+        RateLimitMiddleware,
+        writes_per_minute=settings.api_writes_per_minute,
+        reads_per_minute=settings.api_reads_per_minute,
     )
     if cors_origins:
         app.add_middleware(CORSMiddleware, allow_origins=cors_origins, allow_methods=["*"],

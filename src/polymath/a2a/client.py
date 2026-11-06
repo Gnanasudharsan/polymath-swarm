@@ -14,6 +14,7 @@ from a2a.types import Role, SendMessageRequest
 from polymath.agents.base import AgentContext, AgentResult
 from polymath.core.logging import get_logger
 from polymath.core.models import AgentRole, Claim, Task
+from polymath.security.untrusted import sanitize_untrusted
 
 log = get_logger(__name__)
 MAX_REMOTE_CHARS = 20_000
@@ -59,7 +60,8 @@ class A2ADelegate:
         finally:
             if own:
                 await http.aclose()
-        answer = "\n\n".join(texts).strip()[:MAX_REMOTE_CHARS] or "(empty reply)"
+        raw = "\n\n".join(texts).strip() or "(empty reply)"
+        answer = sanitize_untrusted(raw, max_chars=MAX_REMOTE_CHARS).text
         log.info("a2a.delegated", url=self.url, role=self.task_role.value, chars=len(answer))
         claim = Claim(
             statement=f"[external A2A agent at {self.url}] {answer[:500]}",

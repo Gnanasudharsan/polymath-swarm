@@ -14,6 +14,7 @@ from polymath.llm.cost import LLMUsage
 from polymath.llm.gateway import LLMGateway
 from polymath.mcp_servers.literature.models import Paper
 from polymath.mcp_servers.literature.sources import arxiv_base_id
+from polymath.security.untrusted import wrap_untrusted
 from polymath.verification.evidence import CitationPayload, make_evidence, quote_in_source
 
 log = get_logger(__name__)
@@ -75,18 +76,30 @@ class LiteratureAgent(BaseAgent):
         brief = task_brief(task, context)
         plan = await self.ask(QueryPlan, brief, usage, prompt="literature_queries")
         papers = await self._search(plan)
-        if not papers:
+        passages = await self._passages(papers, " ".join(q.query for q in plan.queries))
+        if not papers and not passages:
             return self.result(task, "No papers found for the planned queries.", usage)
 
-        listing = "\n".join(
-            f"<paper n={i}>\nTitle: {p.title}\nYear: {p.year}\nAbstract: {p.abstract}\n</paper>"
-            for i, p in enumerate(papers, 1)
-        )
+        # Retrieved text is untrusted: sanitised, wrapped, flagged if it reads like instructions.
+        items = [
+            *(wrap_untrusted("paper", f"n={i}",
+                             f"Title: {p.title}\nYear: {p.year}\nAbstract: {p.abstract}")
+              for i, p in enumerate(papers, 1)),
+            *(wrap_untrusted("paper", f"n={len(papers) + j}",
+                             f"Title: {title}\nFull-text passage: {text}")
+              for j, (_, title, text) in enumerate(passages, 1)),
+        ]  # fmt: skip
+        listing = "\n".join(items)
         found = await self.ask(Findings, f"{brief}\n\n## Search results\n{listing}", usage)
 
         claims: list[Claim] = []
         for f in found.findings:
+            if f.paper > len(papers) + len(passages):
+                continue
             if f.paper > len(papers):
+                passage_claim = self._passage_claim(f, passages[f.paper - len(papers) - 1], task)
+                if passage_claim is not None:
+                    claims.append(passage_claim)
                 continue
             paper = papers[f.paper - 1]
             target = citation_target(paper)
