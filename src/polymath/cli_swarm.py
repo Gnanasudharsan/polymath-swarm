@@ -26,7 +26,7 @@ from polymath.graph.infra import swarm_infra
 from polymath.graph.planner import LLMPlanner
 from polymath.graph.runner import ContextFactory, RunSnapshot, SwarmRunner
 from polymath.graph.state import task_outcomes
-from polymath.llm.gateway import LLMGateway
+from polymath.llm.gateway import CompletionFn, LLMGateway
 from polymath.memory.episodic import EpisodicMemory
 from polymath.memory.knowledge import open_knowledge
 
@@ -45,9 +45,10 @@ def context_factory(
     blackboard: Blackboard,
     tools: Tools | None,
     memory: EpisodicMemory | None = None,
+    completion_fn: CompletionFn | None = None,
 ) -> ContextFactory:
     def make(budget: BudgetTracker) -> RunContext:
-        gateway = LLMGateway(settings, budget=budget)
+        gateway = LLMGateway(settings, budget=budget, completion_fn=completion_fn)
         executors = specialists(gateway, tools) if tools else default_executors(gateway)
         return RunContext(
             planner=LLMPlanner(gateway), executors=executors, blackboard=blackboard,
