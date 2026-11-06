@@ -112,7 +112,7 @@ class VerificationGate:
         text = f"{paper.title}\n{paper.abstract}"
         if quote_in_source(p.quote, text):
             return "supports", f"quote found in {p.source}:{p.paper_id} ({paper.title})"
-        if p.source == "arxiv":
+        if p.source == "arxiv" and self.tools.has_knowledge:
             # Full text: (re-)ingest the paper from its arXiv PDF and search the stored text.
             key = f"arxiv:{arxiv_base_id(p.paper_id)}"
             if not (await self.tools.paper_text(key)).text:

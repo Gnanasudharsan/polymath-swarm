@@ -1,6 +1,6 @@
 [project]
 name = "polymath"
-version = "0.5.0"
+version = "0.6.0"
 description = "Verification-first multi-agent swarm for research and mathematics (LangGraph + MCP + A2A + Lean 4)"
 readme = "README.md"
 license = "MIT"
@@ -39,6 +39,7 @@ polymath = "polymath.cli:app"
 [dependency-groups]
 dev = [
     "fakeredis==2.40.0",
+    "matplotlib==3.11.2",
     "mypy==2.4.1",
     "pre-commit==4.7.0",
     "pytest==9.2.0",
@@ -104,4 +105,5 @@ markers = [
     "live: calls real paid LLM APIs (run with -m live)",
     "network: calls free public APIs that may rate-limit (subset of integration)",
     "lean: needs the multi-GB Lean + Mathlib image (subset of integration)",
+    "observability: needs the Langfuse stack (compose profile 'observability')",
 ]

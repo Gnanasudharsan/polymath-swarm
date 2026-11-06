@@ -43,8 +43,28 @@ TRANSIENT_ERRORS: tuple[type[Exception], ...] = (
 )
 
 
+def _preview(messages: list[Message], limit: int = 4000) -> str:
+    """Last user message, truncated — enough to debug a trace without storing whole prompts."""
+    users = [m for m in messages if m.get("role") == "user"]
+    return str(users[-1].get("content", ""))[:limit] if users else ""
+
+
 class LLMError(RuntimeError):
     """All models in the chain failed."""
+
+
+class QuotaExhaustedError(LLMError):
+    """The provider account has no credit/quota left. Retrying or falling back to another
+    model on the same account cannot help, so this is raised immediately."""
+
+
+_QUOTA_MARKERS = ("no credits remaining", "insufficient_quota", "exceeded your current quota",
+                  "credit balance is too low")  # fmt: skip
+
+
+def is_quota_error(exc: BaseException) -> bool:
+    text = str(exc).lower()
+    return any(m in text for m in _QUOTA_MARKERS)
 
 
 class LLMResponse(BaseModel):
@@ -131,6 +151,10 @@ class LLMGateway:
                 span.set_attribute("gen_ai.usage.input_tokens", result.usage.prompt_tokens)
                 span.set_attribute("gen_ai.usage.output_tokens", result.usage.completion_tokens)
                 span.set_attribute("polymath.cost.usd", result.usage.usd)
+                span.set_attribute("gen_ai.usage.cost", result.usage.usd)
+                span.set_attribute("langfuse.observation.type", "generation")
+                span.set_attribute("langfuse.observation.input", _preview(messages))
+                span.set_attribute("langfuse.observation.output", result.content[:4000])
                 return result
 
         raise LLMError("all models failed: " + "; ".join(errors))
@@ -167,6 +191,8 @@ class LLMGateway:
                 async with asyncio.timeout(self.settings.llm_timeout_s):
                     response = await completion(**kwargs)
             except TRANSIENT_ERRORS as exc:
+                if is_quota_error(exc):
+                    raise QuotaExhaustedError(f"{model}: provider quota exhausted: {exc}") from exc
                 if attempt == attempts - 1:
                     raise
                 delay = self.settings.llm_retry_base_delay_s * (2**attempt)

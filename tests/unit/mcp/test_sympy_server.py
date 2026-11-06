@@ -53,3 +53,11 @@ async def test_unknown_tool() -> None:
 def test_server_names_cannot_contain_dots() -> None:
     with pytest.raises(ValueError, match="must not contain"):
         MCPToolbox({"a.b": build_server()})
+
+
+async def test_unmounted_tool_is_a_tool_call_error() -> None:
+    from polymath.agents.tools import MCPTools, ToolCallError
+
+    async with MCPToolbox({"sympy": build_server()}) as tb:
+        with pytest.raises(ToolCallError, match="not mounted"):
+            await MCPTools(tb).paper_text("arxiv:1")

@@ -1,0 +1,709 @@
+[
+  {
+    "suite": "minif2f",
+    "created_at": "2026-11-06T04:05:11.693486Z",
+    "problems": [
+      {
+        "id": "mathd_numbertheory_328",
+        "suite": "minif2f",
+        "prompt": "Prove the following Lean 4 + Mathlib theorem. Keep the statement exactly as given (same name, hypotheses and conclusion).\n\n```lean\nset_option maxHeartbeats 0\nopen BigOperators Real Nat Topology Rat\n\ntheorem mathd_numbertheory_328 :\n  (5^999999) % 7 = 6 := by\n  sorry\n```",
+        "gold": "theorem mathd_numbertheory_328 :\n  (5^999999) % 7 = 6",
+        "meta": {
+          "header": "set_option maxHeartbeats 0\nopen BigOperators Real Nat Topology Rat",
+          "name": "mathd_numbertheory_328"
+        }
+      },
+      {
+        "id": "mathd_numbertheory_435",
+        "suite": "minif2f",
+        "prompt": "Prove the following Lean 4 + Mathlib theorem. Keep the statement exactly as given (same name, hypotheses and conclusion).\n\n```lean\nset_option maxHeartbeats 0\nopen BigOperators Real Nat Topology Rat\n\ntheorem mathd_numbertheory_435\n  (k : ℕ)\n  (h₀ : 0 < k)\n  (h₁ : ∀ n, Nat.gcd (6 * n + k) (6 * n + 3) = 1)\n  (h₂ : ∀ n, Nat.gcd (6 * n + k) (6 * n + 2) = 1)\n  (h₃ : ∀ n, Nat.gcd (6 * n + k) (6 * n + 1) = 1) :\n  5 ≤ k := by\n  sorry\n```",
+        "gold": "theorem mathd_numbertheory_435\n  (k : ℕ)\n  (h₀ : 0 < k)\n  (h₁ : ∀ n, Nat.gcd (6 * n + k) (6 * n + 3) = 1)\n  (h₂ : ∀ n, Nat.gcd (6 * n + k) (6 * n + 2) = 1)\n  (h₃ : ∀ n, Nat.gcd (6 * n + k) (6 * n + 1) = 1) :\n  5 ≤ k",
+        "meta": {
+          "header": "set_option maxHeartbeats 0\nopen BigOperators Real Nat Topology Rat",
+          "name": "mathd_numbertheory_435"
+        }
+      },
+      {
+        "id": "mathd_algebra_148",
+        "suite": "minif2f",
+        "prompt": "Prove the following Lean 4 + Mathlib theorem. Keep the statement exactly as given (same name, hypotheses and conclusion).\n\n```lean\nset_option maxHeartbeats 0\nopen BigOperators Real Nat Topology Rat\n\ntheorem mathd_algebra_148\n  (c : ℝ)\n  (f : ℝ → ℝ)\n  (h₀ : ∀ x, f x = c * x^3 - 9 * x + 3)\n  (h₁ : f 2 = 9) :\n  c = 3 := by\n  sorry\n```",
+        "gold": "theorem mathd_algebra_148\n  (c : ℝ)\n  (f : ℝ → ℝ)\n  (h₀ : ∀ x, f x = c * x^3 - 9 * x + 3)\n  (h₁ : f 2 = 9) :\n  c = 3",
+        "meta": {
+          "header": "set_option maxHeartbeats 0\nopen BigOperators Real Nat Topology Rat",
+          "name": "mathd_algebra_148"
+        }
+      }
+    ],
+    "skipped": [],
+    "results": [
+      {
+        "problem_id": "mathd_numbertheory_328",
+        "system": "single",
+        "correct": false,
+        "attempt": {
+          "answer": "open BigOperators Real Nat Topology Rat\n\nlemma six_pow_two_mul_add_one_mod (m : Nat) : Nat.ModEq 7 (6^(2*m+1)) 6 := by\n  have hsq : Nat.ModEq 7 (6^2) 1 := by decide\n  have hsqm : Nat.ModEq 7 (6^(2*m)) 1 := by\n    -- (6^2)^m ≡ 1^m ⇒ 6^(2*m) ≡ 1\n    simpa [pow_mul] using hsq.pow m\n  have hmul : Nat.ModEq 7 (6^(2*m) * 6) (1 * 6) := hsqm.mul_right 6\n  simpa [pow_succ] using hmul\n\ntheorem mathd_numbertheory_328 :\n  (5^999999) % 7 = 6 := by\n  -- Split the exponent 999999 = 3 * 333333\n  have hsplit : 5^999999 = (5^3)^333333 := by\n    have : 999999 = 3 * 333333 := by decide\n    simpa [this, pow_mul]\n  -- 5^3 ≡ 6 (mod 7)\n  have h3 : Nat.ModEq 7 (5^3) 6 := by decide\n  -- Raise both sides to 333333\n  have hpow : Nat.ModEq 7 ((5^3)^333333) (6^333333) := h3.pow 333333\n  -- Show 333333 is odd: 333333 = 2*166666 + 1, and reduce 6^333333 ≡ 6\n  have hexp : 333333 = 2 * 166666 + 1 := by decide\n  have h6odd : Nat.ModEq 7 (6^333333) 6 := by\n    simpa [hexp] using six_pow_two_mul_add_one_mod 166666\n  -- Combine\n  have hfinal : Nat.ModEq 7 (5^999999) 6 := by\n    simpa [hsplit] using hpow.trans h6odd\n  -- Convert ModEq to equality of remainders and simplify 6 % 7 = 6\n  have : (5^999999) % 7 = 6 % 7 := by simpa using hfinal\n  have h6 : 6 % 7 = 6 := by decide\n  simpa [h6] using this",
+          "verified_lean": [],
+          "citations": 0,
+          "unsupported_citations": 0,
+          "claims_total": 0,
+          "claims_verified": 0,
+          "usd": 0.14554125,
+          "tokens": 15584,
+          "latency_s": 149.25397737499952,
+          "error": null,
+          "run_id": null
+        }
+      },
+      {
+        "problem_id": "mathd_numbertheory_328",
+        "system": "swarm",
+        "correct": true,
+        "attempt": {
+          "answer": "Yes — (5^999999) % 7 = 6. [claim_62eadb0a88a0]\n\nThis equality is established by the verified claim above. [claim_62eadb0a88a0]",
+          "verified_lean": [
+            "set_option maxHeartbeats 0\nopen BigOperators Real Nat Topology Rat\n\ntheorem mathd_numbertheory_328 :\n  (5^999999) % 7 = 6 := by\n  intros; omega"
+          ],
+          "citations": 0,
+          "unsupported_citations": 0,
+          "claims_total": 6,
+          "claims_verified": 1,
+          "usd": 0.1695325,
+          "tokens": 27126,
+          "latency_s": 139.8701307500014,
+          "error": null,
+          "run_id": "run_c0298e836564"
+        }
+      },
+      {
+        "problem_id": "mathd_numbertheory_435",
+        "system": "single",
+        "correct": false,
+        "attempt": {
+          "answer": "set_option maxHeartbeats 0\nopen BigOperators Real Nat Topology Rat\n\ntheorem mathd_numbertheory_435\n  (k : ℕ)\n  (h₀ : 0 < k)\n  (h₁ : ∀ n, Nat.gcd (6 * n + k) (6 * n + 3) = 1)\n  (h₂ : ∀ n, Nat.gcd (6 * n + k) (6 * n + 2) = 1)\n  (h₃ : ∀ n, Nat.gcd (6 * n + k) (6 * n + 1) = 1) :\n  5 ≤ k := by\n  classical\n  by_contra hk\n  have hklt : k < 5 := Nat.not_le.mp hk\n  interval_cases k using hklt\n  · exact (lt_irrefl 0) h₀\n  · -- k = 1\n    have h := h₃ 1\n    have h' : Nat.gcd (6 * 1 + 1) (6 * 1 + 1) = 1 := by simpa using h\n    have : 6 * 1 + 1 = 1 := by simpa [Nat.gcd_self] using h'\n    exact by decide\n  · -- k = 2\n    have h := h₂ 0\n    have h' : Nat.gcd (6 * 0 + 2) (6 * 0 + 2) = 1 := by simpa using h\n    have : 6 * 0 + 2 = 1 := by simpa [Nat.gcd_self] using h'\n    exact by decide\n  · -- k = 3\n    have h := h₁ 0\n    have h' : Nat.gcd (6 * 0 + 3) (6 * 0 + 3) = 1 := by simpa using h\n    have : 6 * 0 + 3 = 1 := by simpa [Nat.gcd_self] using h'\n    exact by decide\n  · -- k = 4\n    have h := h₂ 0\n    have hEq : Nat.gcd (6 * 0 + 4) (6 * 0 + 2) = 1 := by simpa using h\n    have hdiv : 2 ∣ Nat.gcd (6 * 0 + 4) (6 * 0 + 2) := by\n      have h₄ : 2 ∣ (6 * 0 + 4) := ⟨2, by simp⟩\n      have h₂' : 2 ∣ (6 * 0 + 2) := ⟨1, by simp⟩\n      exact Nat.dvd_gcd h₄ h₂'\n    have : 2 ∣ 1 := by simpa [hEq] using hdiv\n    have : 2 = 1 := Nat.dvd_one.mp this\n    exact by decide\n  · exact (le_of_lt_succ hklt).not_lt (by decide)\n",
+          "verified_lean": [],
+          "citations": 0,
+          "unsupported_citations": 0,
+          "claims_total": 0,
+          "claims_verified": 0,
+          "usd": 0.22502000000000003,
+          "tokens": 24434,
+          "latency_s": 196.01078037499974,
+          "error": null,
+          "run_id": null
+        }
+      },
+      {
+        "problem_id": "mathd_numbertheory_435",
+        "system": "swarm",
+        "correct": false,
+        "attempt": {
+          "answer": "No claim passed the verification gate, so the swarm cannot state a verified answer. See the conjectures below for what was proposed but not established.",
+          "verified_lean": [],
+          "citations": 0,
+          "unsupported_citations": 0,
+          "claims_total": 7,
+          "claims_verified": 0,
+          "usd": 0.00758825,
+          "tokens": 6714,
+          "latency_s": 34.423192875001405,
+          "error": null,
+          "run_id": "run_b112021eefb6"
+        }
+      },
+      {
+        "problem_id": "mathd_algebra_148",
+        "system": "single",
+        "correct": false,
+        "attempt": {
+          "answer": "open BigOperators Real Nat Topology Rat\n\ntheorem mathd_algebra_148\n  (c : ℝ)\n  (f : ℝ → ℝ)\n  (h₀ : ∀ x, f x = c * x^3 - 9 * x + 3)\n  (h₁ : f 2 = 9) :\n  c = 3 := by\n  have hcalc0 : 9 = c * (2:ℝ)^3 - 9 * (2:ℝ) + 3 := by\n    simpa [h₁] using h₀ 2\n  have hpow : (2:ℝ)^3 = 8 := by norm_num\n  have hmul2 : 9 * (2:ℝ) = 18 := by norm_num\n  have hcalc1 : 9 = c * 8 - 18 + 3 := by\n    simpa [hpow, hmul2] using hcalc0\n  have hcalc1' : 9 = 8 * c - 18 + 3 := by\n    simpa [mul_comm] using hcalc1\n  have hmul : 8 * c = 24 := by\n    linarith [hcalc1']\n  have h8 : (8:ℝ) ≠ 0 := by norm_num\n  have hmul' : 8 * c = 8 * 3 := by\n    simpa using hmul.trans (by norm_num : 24 = 8 * 3)\n  exact (mul_left_cancel₀ h8 hmul')",
+          "verified_lean": [],
+          "citations": 0,
+          "unsupported_citations": 0,
+          "claims_total": 0,
+          "claims_verified": 0,
+          "usd": 0.05510500000000001,
+          "tokens": 6032,
+          "latency_s": 47.155784333001066,
+          "error": null,
+          "run_id": null
+        }
+      },
+      {
+        "problem_id": "mathd_algebra_148",
+        "system": "swarm",
+        "correct": false,
+        "attempt": {
+          "answer": "No claim passed the verification gate, so the swarm cannot state a verified answer. See the conjectures below for what was proposed but not established.",
+          "verified_lean": [],
+          "citations": 0,
+          "unsupported_citations": 0,
+          "claims_total": 7,
+          "claims_verified": 0,
+          "usd": 0.17926025,
+          "tokens": 32876,
+          "latency_s": 328.30954225000096,
+          "error": null,
+          "run_id": "run_e73565d040dc"
+        }
+      }
+    ]
+  },
+  {
+    "suite": "math",
+    "created_at": "2026-11-06T04:09:24.262192Z",
+    "problems": [
+      {
+        "id": "counting_and_probability_262",
+        "suite": "math",
+        "prompt": "In how many ways can $7$ people sit around a round table if no two of the $3$ people Pierre, Rosa, and Thomas can sit next to each other? (Seating arrangements which are rotations of each other are treated as the same.)\n\nGive the final answer in the form \\boxed{...}.",
+        "gold": "144",
+        "meta": {
+          "type": "Counting & Probability"
+        }
+      },
+      {
+        "id": "prealgebra_46",
+        "suite": "math",
+        "prompt": "The ratio of losses to wins for Kyle's team is 3 to 2. If the team had played the same number of games, but had won twice as many of its games, what would the ratio of losses to wins have been? Express your answer as a common fraction.\n\nGive the final answer in the form \\boxed{...}.",
+        "gold": "\\frac{1}{4}",
+        "meta": {
+          "type": "Prealgebra"
+        }
+      },
+      {
+        "id": "algebra_129",
+        "suite": "math",
+        "prompt": "Square A and Square B are both $2009$ by $2009$ squares.  Square A has both its length and width increased by an amount $x$, while Square B has its length and width decreased by the same amount $x$.  What is the minimum value of $x$ such that the difference in area between the two new squares is at least as great as the area of a $2009$ by $2009$ square?\n\nGive the final answer in the form \\boxed{...}.",
+        "gold": "\\frac{2009}{4}",
+        "meta": {
+          "type": "Algebra"
+        }
+      },
+      {
+        "id": "number_theory_278",
+        "suite": "math",
+        "prompt": "What is the sum of the smallest and second-smallest positive integers $a$ satisfying the congruence $$27a\\equiv 17 \\pmod{40}~?$$\n\nGive the final answer in the form \\boxed{...}.",
+        "gold": "62",
+        "meta": {
+          "type": "Number Theory"
+        }
+      },
+      {
+        "id": "prealgebra_263",
+        "suite": "math",
+        "prompt": "Two numbers are said to be 'relatively prime' if their greatest common factor is 1. How many integers greater than 10 and less than 30 are relatively prime with 28?\n\nGive the final answer in the form \\boxed{...}.",
+        "gold": "9",
+        "meta": {
+          "type": "Prealgebra"
+        }
+      },
+      {
+        "id": "prealgebra_209",
+        "suite": "math",
+        "prompt": "In Heidi's history class, the only grades that count toward the semester average are the $6$ tests she has already taken and the upcoming final exam. The final exam counts as two tests. Heidi has determined that if she earns $99$ points on the final she will have exactly a $90$-point average for the semester. On average, how many points has Heidi scored on each test prior to the final exam?\n\nGive the final answer in the form \\boxed{...}.",
+        "gold": "87",
+        "meta": {
+          "type": "Prealgebra"
+        }
+      }
+    ],
+    "skipped": [],
+    "results": [
+      {
+        "problem_id": "counting_and_probability_262",
+        "system": "single",
+        "correct": true,
+        "attempt": {
+          "answer": "\\boxed{144}",
+          "verified_lean": [],
+          "citations": 0,
+          "unsupported_citations": 0,
+          "claims_total": 0,
+          "claims_verified": 0,
+          "usd": 0.0004345,
+          "tokens": 296,
+          "latency_s": 3.8262619170018297,
+          "error": null,
+          "run_id": null
+        }
+      },
+      {
+        "problem_id": "counting_and_probability_262",
+        "system": "swarm",
+        "correct": true,
+        "attempt": {
+          "answer": "\\boxed{144} [claim_4de5ce834e76]\n\nThis equals 3 * 2 * 4! = 144, where there are 3 choices of nonadjacent seat-pairs for Rosa and Thomas [claim_bf447def4f0a], 2 orders for Rosa and Thomas, and 4! = 24 ways to seat the remaining four people [claim_52a52f0d0428], giving 3 * 2 * 4! = 144 [claim_7323d0ec0744].",
+          "verified_lean": [],
+          "citations": 0,
+          "unsupported_citations": 0,
+          "claims_total": 9,
+          "claims_verified": 4,
+          "usd": 0.0129885,
+          "tokens": 12425,
+          "latency_s": 79.37234083300064,
+          "error": null,
+          "run_id": "run_9fbe7763a404"
+        }
+      },
+      {
+        "problem_id": "prealgebra_46",
+        "system": "single",
+        "correct": true,
+        "attempt": {
+          "answer": "\\boxed{\\tfrac{1}{4}}",
+          "verified_lean": [],
+          "citations": 0,
+          "unsupported_citations": 0,
+          "claims_total": 0,
+          "claims_verified": 0,
+          "usd": 0.00031775,
+          "tokens": 242,
+          "latency_s": 10.169907958003023,
+          "error": null,
+          "run_id": null
+        }
+      },
+      {
+        "problem_id": "prealgebra_46",
+        "system": "swarm",
+        "correct": true,
+        "attempt": {
+          "answer": "\\boxed{1/4} [claim_98e004693c90]\n\nIf the team originally had wins = 2k and losses = 3k, doubling the wins gives new wins = 4k and new losses = k, so the losses-to-wins ratio is k:4k = 1/4 [claim_98e004693c90].",
+          "verified_lean": [],
+          "citations": 0,
+          "unsupported_citations": 0,
+          "claims_total": 1,
+          "claims_verified": 1,
+          "usd": 0.006245,
+          "tokens": 6829,
+          "latency_s": 30.36799987500126,
+          "error": null,
+          "run_id": "run_b7ce6128ce20"
+        }
+      },
+      {
+        "problem_id": "algebra_129",
+        "system": "single",
+        "correct": true,
+        "attempt": {
+          "answer": "Let the original side be s = 2009. The area difference is\n\n(s + x)^2 - (s - x)^2 = 4sx = 4(2009)x.\n\nWe require 4(2009)x ≥ 2009^2, so x ≥ 2009^2 / (4·2009) = 2009/4.\n\nThus the minimum x is \\boxed{\\tfrac{2009}{4}}.",
+          "verified_lean": [],
+          "citations": 0,
+          "unsupported_citations": 0,
+          "claims_total": 0,
+          "claims_verified": 0,
+          "usd": 0.0007505,
+          "tokens": 489,
+          "latency_s": 9.564235333000397,
+          "error": null,
+          "run_id": null
+        }
+      },
+      {
+        "problem_id": "algebra_129",
+        "system": "swarm",
+        "correct": true,
+        "attempt": {
+          "answer": "\\boxed{502.25}\n\nThe minimal value of x is 2009/4 = 502.25, as established by the verified computation that (2009+x)^2-(2009-x)^2 >= 2009^2 yields x = 2009/4 = 502.25 [claim_f0162c21d7db].",
+          "verified_lean": [],
+          "citations": 0,
+          "unsupported_citations": 0,
+          "claims_total": 1,
+          "claims_verified": 1,
+          "usd": 0.0060662500000000005,
+          "tokens": 6905,
+          "latency_s": 39.822571374999825,
+          "error": null,
+          "run_id": "run_ae7dd7fe4096"
+        }
+      },
+      {
+        "problem_id": "number_theory_278",
+        "system": "single",
+        "correct": true,
+        "attempt": {
+          "answer": "\\boxed{62}",
+          "verified_lean": [],
+          "citations": 0,
+          "unsupported_citations": 0,
+          "claims_total": 0,
+          "claims_verified": 0,
+          "usd": 0.00043125,
+          "tokens": 283,
+          "latency_s": 2.7356654579998576,
+          "error": null,
+          "run_id": null
+        }
+      },
+      {
+        "problem_id": "number_theory_278",
+        "system": "swarm",
+        "correct": true,
+        "attempt": {
+          "answer": "\\boxed{62} [claim_c48729b22219]\n\nThe two smallest positive solutions are 11 and 51, and their sum is 62 [claim_c48729b22219].",
+          "verified_lean": [],
+          "citations": 0,
+          "unsupported_citations": 0,
+          "claims_total": 1,
+          "claims_verified": 1,
+          "usd": 0.005971249999999999,
+          "tokens": 6441,
+          "latency_s": 34.777889334000065,
+          "error": null,
+          "run_id": "run_26e2a41f11b9"
+        }
+      },
+      {
+        "problem_id": "prealgebra_263",
+        "system": "single",
+        "correct": true,
+        "attempt": {
+          "answer": "\\(\\boxed{9}\\)",
+          "verified_lean": [],
+          "citations": 0,
+          "unsupported_citations": 0,
+          "claims_total": 0,
+          "claims_verified": 0,
+          "usd": 0.00043525,
+          "tokens": 285,
+          "latency_s": 6.489784375000454,
+          "error": null,
+          "run_id": null
+        }
+      },
+      {
+        "problem_id": "prealgebra_263",
+        "system": "swarm",
+        "correct": true,
+        "attempt": {
+          "answer": "\\boxed{9} [claim_ae896ae46819]\n\nThe integers in the range 11 to 29 that are relatively prime to 28 are [11, 13, 15, 17, 19, 23, 25, 27, 29] [claim_ae896ae46819].",
+          "verified_lean": [],
+          "citations": 0,
+          "unsupported_citations": 0,
+          "claims_total": 1,
+          "claims_verified": 1,
+          "usd": 0.008354,
+          "tokens": 8153,
+          "latency_s": 45.755749750001996,
+          "error": null,
+          "run_id": "run_7adf2f6d43e1"
+        }
+      },
+      {
+        "problem_id": "prealgebra_209",
+        "system": "single",
+        "correct": true,
+        "attempt": {
+          "answer": "Let the average on the 6 prior tests be x. Total points before final = 6x. The final counts twice, so with a 99 it adds 198. The 8-test average is (6x + 198)/8 = 90.\n\nSolve: 6x + 198 = 720 → 6x = 522 → x = 87.\n\n\\boxed{87}",
+          "verified_lean": [],
+          "citations": 0,
+          "unsupported_citations": 0,
+          "claims_total": 0,
+          "claims_verified": 0,
+          "usd": 0.00047099999999999996,
+          "tokens": 344,
+          "latency_s": 6.493770959001267,
+          "error": null,
+          "run_id": null
+        }
+      },
+      {
+        "problem_id": "prealgebra_209",
+        "system": "swarm",
+        "correct": true,
+        "attempt": {
+          "answer": "\\boxed{87}\n\nThis is established by the verified claim that Heidi's average on the six prior tests is 87 [claim_c4e4754d3bae].",
+          "verified_lean": [],
+          "citations": 0,
+          "unsupported_citations": 0,
+          "claims_total": 1,
+          "claims_verified": 1,
+          "usd": 0.00419175,
+          "tokens": 4748,
+          "latency_s": 45.366600749999634,
+          "error": null,
+          "run_id": "run_05c9e81d5799"
+        }
+      }
+    ]
+  },
+  {
+    "suite": "research_qa",
+    "created_at": "2026-11-06T04:38:22.432130Z",
+    "problems": [
+      {
+        "id": "rqa_dropout_bn",
+        "suite": "research_qa",
+        "prompt": "Which paper introduced batch normalization, and what problem did it claim to address?",
+        "gold": "Batch Normalization;internal covariate shift",
+        "meta": {
+          "source": "arXiv:1502.03167"
+        }
+      },
+      {
+        "id": "rqa_alphago",
+        "suite": "research_qa",
+        "prompt": "Which paper proposed the Proximal Policy Optimization (PPO) algorithm, and what does its objective clip?",
+        "gold": "Proximal Policy Optimization;clip",
+        "meta": {
+          "source": "arXiv:1707.06347"
+        }
+      },
+      {
+        "id": "rqa_adam",
+        "suite": "research_qa",
+        "prompt": "Which paper introduced the Adam optimizer, and what does Adam adapt for each parameter?",
+        "gold": "Adam: A Method for Stochastic Optimization;learning rate",
+        "meta": {
+          "source": "arXiv:1412.6980"
+        }
+      },
+      {
+        "id": "rqa_transformer",
+        "suite": "research_qa",
+        "prompt": "Which paper introduced the Transformer architecture, and in which year did it appear on arXiv?",
+        "gold": "Attention Is All You Need;2017",
+        "meta": {
+          "source": "arXiv:1706.03762"
+        }
+      },
+      {
+        "id": "rqa_resnet",
+        "suite": "research_qa",
+        "prompt": "Which paper introduced deep residual networks (ResNets), and what is the core idea in one phrase?",
+        "gold": "Deep Residual Learning for Image Recognition;residual",
+        "meta": {
+          "source": "arXiv:1512.03385"
+        }
+      },
+      {
+        "id": "rqa_gans",
+        "suite": "research_qa",
+        "prompt": "Which 2014 paper introduced generative adversarial networks, and which two models are trained against each other?",
+        "gold": "Generative Adversarial;generator;discriminator",
+        "meta": {
+          "source": "arXiv:1406.2661"
+        }
+      }
+    ],
+    "skipped": [],
+    "results": [
+      {
+        "problem_id": "rqa_dropout_bn",
+        "system": "single",
+        "correct": true,
+        "attempt": {
+          "answer": "The paper is \"Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift\" by Sergey Ioffe and Christian Szegedy (arXiv:1502.03167). It introduced batch normalization and claimed to address the problem of \"internal covariate shift,\" i.e., the changing distribution of layer inputs during training which complicates and slows optimization.",
+          "verified_lean": [],
+          "citations": 1,
+          "unsupported_citations": 1,
+          "claims_total": 0,
+          "claims_verified": 0,
+          "usd": 0.0011062499999999998,
+          "tokens": 911,
+          "latency_s": 5.912323624997953,
+          "error": null,
+          "run_id": null
+        }
+      },
+      {
+        "problem_id": "rqa_dropout_bn",
+        "system": "swarm",
+        "correct": true,
+        "attempt": {
+          "answer": "Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift (2015) — introduced batch normalization and claimed to address the changing distribution of layer inputs (\"internal covariate shift\") during training [claim_9b4090390c15][claim_8ec01534949d].\n\nJustification: The paper identifies the training difficulty as that the distribution of each layer's inputs changes during training [claim_9b4090390c15] and names this problem \"internal covariate shift,\" proposing to address it by normalizing layer inputs [claim_8ec01534949d]. The paper also claims that batch normalization \"allows us to use much higher learning rates and be less careful about initialization\" [claim_9c451fd388a1], and it reports an ImageNet result of 4.9% top-5 validation error for an ensemble of batch-normalized networks [claim_c741be575cc8].\n\nNote: the verified claims do not provide the paper's author names, venue, or identifier.",
+          "verified_lean": [],
+          "citations": 4,
+          "unsupported_citations": 0,
+          "claims_total": 4,
+          "claims_verified": 4,
+          "usd": 0.006603749999999999,
+          "tokens": 8054,
+          "latency_s": 59.7581547080008,
+          "error": null,
+          "run_id": "run_1e1671e1d5cc"
+        }
+      },
+      {
+        "problem_id": "rqa_alphago",
+        "system": "single",
+        "correct": false,
+        "attempt": {
+          "answer": "Proximal Policy Optimization (PPO) was proposed in the paper \"Proximal Policy Optimization Algorithms\" (arXiv:1707.06347). The PPO clipped objective clips the probability ratio r(θ)=π_θ(a|s)/π_{θ_old}(a|s) (the ratio of new to old policy probabilities) to lie within [1 - ε, 1 + ε], preventing excessively large policy updates.",
+          "verified_lean": [],
+          "citations": 1,
+          "unsupported_citations": 1,
+          "claims_total": 0,
+          "claims_verified": 0,
+          "usd": 0.0019439999999999998,
+          "tokens": 1336,
+          "latency_s": 39.52570358400044,
+          "error": null,
+          "run_id": null
+        }
+      },
+      {
+        "problem_id": "rqa_alphago",
+        "system": "swarm",
+        "correct": false,
+        "attempt": {
+          "answer": "Answer: The paper \"Proximal Policy Optimization Algorithms\" (2017) proposed the Proximal Policy Optimization (PPO) family of policy-gradient methods [claim_3978a5296753].\n\nJustification: PPO optimizes a surrogate objective and uses clipping heuristics — specifically a clipped loss component (often called loss clipping or gradient clipping) — and the objective applies an explicit clipping range to its surrogate/importance-ratio term [claim_3978a5296753][claim_c31e26ec0dac][claim_aa01b48db677].",
+          "verified_lean": [],
+          "citations": 3,
+          "unsupported_citations": 0,
+          "claims_total": 3,
+          "claims_verified": 3,
+          "usd": 0.00657475,
+          "tokens": 8568,
+          "latency_s": 99.13979129099971,
+          "error": null,
+          "run_id": "run_8efcc29b9fb7"
+        }
+      },
+      {
+        "problem_id": "rqa_adam",
+        "system": "single",
+        "correct": true,
+        "attempt": {
+          "answer": "The Adam optimizer was introduced by Kingma and Ba in the paper “Adam: A Method for Stochastic Optimization” (arXiv:1412.6980). Adam adapts an individual learning rate for each parameter by using adaptive estimates of the first and second moments (i.e., the mean and uncentered variance) of the gradients.",
+          "verified_lean": [],
+          "citations": 1,
+          "unsupported_citations": 0,
+          "claims_total": 0,
+          "claims_verified": 0,
+          "usd": 0.0008964999999999999,
+          "tokens": 807,
+          "latency_s": 4.638976541999,
+          "error": null,
+          "run_id": null
+        }
+      },
+      {
+        "problem_id": "rqa_adam",
+        "system": "swarm",
+        "correct": false,
+        "attempt": {
+          "answer": "Adam was introduced by Kingma and Ba (2015) and adapts per-parameter learning rates by scaling gradients by the square roots of exponential moving averages of past squared gradients [claim_3a926eda30f9][claim_257bef83866c].\n\nJustification: The inventors are attributed as Kingma and Ba (2015) [claim_3a926eda30f9], and Adam’s per-parameter adaptation is implemented by using gradient updates scaled by the square roots of exponential moving averages of squared past gradients (i.e., per-parameter learning rates based on the RMS of past gradients) [claim_257bef83866c].",
+          "verified_lean": [],
+          "citations": 2,
+          "unsupported_citations": 0,
+          "claims_total": 2,
+          "claims_verified": 2,
+          "usd": 0.00448025,
+          "tokens": 5965,
+          "latency_s": 43.77552716599894,
+          "error": null,
+          "run_id": "run_3894429ddd60"
+        }
+      },
+      {
+        "problem_id": "rqa_transformer",
+        "system": "single",
+        "correct": true,
+        "attempt": {
+          "answer": "The Transformer was introduced in the paper \"Attention Is All You Need\" by Vaswani et al.; it appeared on arXiv in 2017.",
+          "verified_lean": [],
+          "citations": 1,
+          "unsupported_citations": 0,
+          "claims_total": 0,
+          "claims_verified": 0,
+          "usd": 0.00098325,
+          "tokens": 853,
+          "latency_s": 4.728975375001028,
+          "error": null,
+          "run_id": null
+        }
+      },
+      {
+        "problem_id": "rqa_transformer",
+        "system": "swarm",
+        "correct": true,
+        "attempt": {
+          "answer": "The paper that introduced the Transformer architecture is \"Attention is All You Need\" (2017), but the arXiv identifier and first arXiv submission date are not available in the verified claims. This is established by the verified claim that \"Attention is All you Need\" (2017) proposes the Transformer architecture based solely on attention mechanisms, dispensing with recurrence and convolutions [claim_c34c2242c603].",
+          "verified_lean": [],
+          "citations": 1,
+          "unsupported_citations": 0,
+          "claims_total": 1,
+          "claims_verified": 1,
+          "usd": 0.005023,
+          "tokens": 7667,
+          "latency_s": 27.235309374998906,
+          "error": null,
+          "run_id": "run_49792338b2d5"
+        }
+      },
+      {
+        "problem_id": "rqa_resnet",
+        "system": "single",
+        "correct": true,
+        "attempt": {
+          "answer": "The paper is “Deep Residual Learning for Image Recognition” by He et al. (arXiv:1512.03385). Core idea in one phrase: learn residual functions (skip connections).",
+          "verified_lean": [],
+          "citations": 1,
+          "unsupported_citations": 0,
+          "claims_total": 0,
+          "claims_verified": 0,
+          "usd": 0.00082975,
+          "tokens": 778,
+          "latency_s": 5.533733125001163,
+          "error": null,
+          "run_id": null
+        }
+      },
+      {
+        "problem_id": "rqa_resnet",
+        "system": "swarm",
+        "correct": false,
+        "attempt": {
+          "answer": "Not established by the verified claims.\n\nJustification: the verified items do not contain the original He et al. ResNet publication, but they do describe and use deep residual networks: one paper describes deep residual learning as using identity mapping for shortcut connections to train very deep networks [claim_7b3814f7fff4], another reports that residual networks achieved record‑beating performance in visual tasks [claim_531c3f159a02], and a further work presents multilevel residual networks with hundreds or thousands of layers dominating image recognition tasks [claim_b96087b1b399]. Therefore the core idea (in one phrase) supported by the verified claims is: identity mapping shortcut connections for deep residual learning [claim_7b3814f7fff4].",
+          "verified_lean": [],
+          "citations": 3,
+          "unsupported_citations": 0,
+          "claims_total": 3,
+          "claims_verified": 3,
+          "usd": 0.00551575,
+          "tokens": 6019,
+          "latency_s": 37.515853582997806,
+          "error": null,
+          "run_id": "run_5c7adec6ab9c"
+        }
+      },
+      {
+        "problem_id": "rqa_gans",
+        "system": "single",
+        "correct": false,
+        "attempt": {
+          "answer": "The 2014 paper \"Generative Adversarial Nets\" (arXiv:1406.2661) by Goodfellow et al. introduced generative adversarial networks (GANs). GANs train two models against each other: a generative model G that captures the data distribution, and a discriminative model D that estimates whether samples are from the training data or G.",
+          "verified_lean": [],
+          "citations": 1,
+          "unsupported_citations": 1,
+          "claims_total": 0,
+          "claims_verified": 0,
+          "usd": 0.000974,
+          "tokens": 851,
+          "latency_s": 3.9877020419990004,
+          "error": null,
+          "run_id": null
+        }
+      },
+      {
+        "problem_id": "rqa_gans",
+        "system": "swarm",
+        "correct": false,
+        "attempt": {
+          "answer": "The 2014 paper \"Generative Adversarial Networks\" introduced GANs and trains a generative model G against a discriminative model D.[claim_96d2ea6e14a7][claim_300387d1fc49]\n\nJustification: The paper introduced a new framework for estimating generative models via an adversarial process.[claim_96d2ea6e14a7] In that framework a generative model G is trained to capture the data distribution and a discriminative model D is trained to estimate the probability that a sample came from the training data rather than G, i.e., G and D are trained against each other.[claim_300387d1fc49]",
+          "verified_lean": [],
+          "citations": 2,
+          "unsupported_citations": 0,
+          "claims_total": 2,
+          "claims_verified": 2,
+          "usd": 0.0053155,
+          "tokens": 7122,
+          "latency_s": 35.825911459000054,
+          "error": null,
+          "run_id": "run_8618496ddd7a"
+        }
+      }
+    ]
+  }
+]

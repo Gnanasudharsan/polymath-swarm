@@ -11,11 +11,13 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 ## Current phase
 - Done: Phase 0 (v0.0.0), Phase 1 core runtime (v0.1.0), Phase 2 MCP tools (v0.2.0),
   Phase 3 orchestration (v0.3.0), Phase 4 specialists & verification (v0.4.0),
-  Phase 5 memory & knowledge (v0.5.0)
-- Next: Phase 6 — Evals, observability, cost (`phase-6-evals`)
+  Phase 5 memory & knowledge (v0.5.0), Phase 6 evals & observability (v0.6.0)
+- Next: Phase 7 — API & live frontend (`phase-7-ui`). `frontend/` is scaffolded (Next 16) and
+  builds; FastAPI backend + mock-LLM mode + Playwright run still to do.
 - User decisions for LLM work: OpenAI models (no Anthropic key on this machine), **$5 total cap**
   enforced by the spend ledger in `.env` (`.sandbox/spend.jsonl`). Phase 4 spent $0.80, Phase 5
-  about $0.37 (ledger ≈ $1.17 after Phase 5).
+  about $0.37, Phase 6 about $1.41 (ledger ≈ $2.58 after Phase 6). The OpenAI account itself ran
+  out of credit once mid-eval (user topped up); `QuotaExhaustedError` now fails fast.
 
 ## What exists (Phase 1)
 - `core/models.py` — all domain models; `TaskGraph` validates deps + cycles (Kahn), `ready_tasks()`;
@@ -91,6 +93,18 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
   with `origin_run_id`; `finalize` stores the gate report's verdicts (`claims_to_remember`).
 - Eval: `evals/datasets/retrieval/` (60 passages, 30 queries), `evals/runners/retrieval.py` → report.
 
+## What exists (Phase 6)
+- Langfuse v4.76 under compose profile `observability` (lf-* services, pre-created project, keys
+  `pk-lf-polymath-local`/`sk-lf-polymath-local`). `Settings.otlp_target()`; spans `swarm.run` ->
+  `agent.<role>` -> `mcp.call_tool` / `llm.complete` (generation). v4 is events-only: read back via
+  `/api/public/v2/observations`.
+- `polymath.evals`: `datasets.py` (miniF2F mathd_*, MATH L5 via HF datasets-server, cached in
+  `evals/datasets/cache/`; research_qa committed), `scoring.py`, `systems.py` (SingleAgent, Swarm),
+  `harness.py` (`run_suite`, metrics, aborts on `QuotaExhaustedError`), `report.py` (md + PNG).
+- CLI `polymath eval --suite all --n 5 --system both`; runners `evals/runners/{combine,rerun_failed,
+  retrieval}.py`. Report: `evals/reports/2026-11-05/`.
+- Planner v2 routes value questions to compute (not formalization).
+
 ## Gotchas
 - Claude 5.x rejects sampling params → gateway always passes `drop_params=True`.
 - Catch `openai.OpenAIError` (not `litellm.exceptions.OpenAIError`) as the base of LiteLLM API errors.
@@ -105,7 +119,8 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
   (`==`), never `is`. Nested Pydantic fields come back as real enums.
 - `graph.add_node(..., input_schema=TaskInput)` needs a `type: ignore[call-overload]` (LangGraph typing).
 - **LiteLLM calls `load_dotenv()` on import**, so `.env` values (model profile, spend ledger) enter
-  `os.environ`. `tests/conftest.py` strips `POLYMATH_*` per test and sets `POLYMATH_NO_DOTENV=1`;
+  `os.environ` unless `LITELLM_MODE != "DEV"`. `tests/conftest.py` sets `LITELLM_MODE=PRODUCTION`
+  first, strips `POLYMATH_*` per test and sets `POLYMATH_NO_DOTENV=1`;
   never build `Settings` at test-module import time (use the `settings`/`infra_settings` fixtures).
 - Never open `MCPToolbox`/`open_tools` in an async-generator fixture: anyio needs enter/exit in
   the same task. Open it inside the test body.
@@ -113,6 +128,11 @@ answer must carry evidence: a verified citation, a reproduced computation, or a 
 - The claims merge never downgrades status, so anything persisted must come from the gate's report,
   not from merged state. Integration tests writing to shared tables must delete their rows.
 - Real PDF text contains NUL bytes (Postgres rejects them) — `text.clean` strips control chars.
+- Shell heredocs containing dollar signs (TSX, compose, money amounts) trip the safety checker:
+  write such files with the Write tool.
+- Next 16 (frontend): `params` are Promises; `cacheComponents` is on, so no `dynamic` segment
+  config — wrap request-time reads in `<Suspense>`; `middleware` is now `proxy`. Read
+  `frontend/node_modules/next/dist/docs/` before changing Next code.
 - zsh: don't put a command in a variable (`$R`) — it won't word-split; use a function.
 
 ## Architecture (target)

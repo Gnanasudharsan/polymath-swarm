@@ -167,6 +167,15 @@ and the gateway routes to the degraded model; at the ceiling dispatch stops. A c
 Agents reach tools through `MCPToolbox` (`mcp_servers/client.py`), which mounts several servers,
 namespaces tools as `server.tool`, and exports LiteLLM function schemas. See ADR-0003 and ADR-0004.
 
+## Observability & evaluation (Phase 6)
+
+Every graph invocation is a `swarm.run` trace (Langfuse session = run id) containing `agent.<role>`
+spans, `mcp.call_tool` spans and `llm.complete` generations (model, tokens, cost). Langfuse v4 runs
+self-hosted under the `observability` compose profile.
+
+`polymath eval` compares a single-agent baseline with the swarm on miniF2F, MATH Level 5 and research
+QA, using deterministic scorers; see ADR-0008 and `evals/reports/`.
+
 ## Infrastructure (dev)
 
 `docker compose up -d --wait` starts Postgres 16 + pgvector (host port 5544) and Redis 7 (6379).

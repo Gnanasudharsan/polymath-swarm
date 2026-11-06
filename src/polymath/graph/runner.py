@@ -17,6 +17,7 @@ from pydantic import BaseModel
 from polymath.blackboard import Blackboard
 from polymath.core.budget import BudgetTracker
 from polymath.core.models import EventKind, Problem, RunBudget, new_id
+from polymath.core.tracing import get_tracer
 from polymath.graph.builder import SwarmGraph
 from polymath.graph.context import RunContext
 from polymath.graph.state import TERMINAL_STATUSES, RunStatus, SwarmState
@@ -40,6 +41,20 @@ class RunSnapshot:
     @property
     def awaiting_approval(self) -> bool:
         return self.interrupt is not None and self.interrupt.get("type") == "plan_approval"
+
+
+def _run_span(run_id: str, phase: str, problem: str) -> Any:
+    """Root span for one graph invocation: Langfuse groups a run's invocations by session."""
+    return get_tracer().start_as_current_span(
+        "swarm.run",
+        attributes={
+            "polymath.run_id": run_id,
+            "polymath.run.phase": phase,
+            "langfuse.session.id": run_id,
+            "langfuse.trace.name": f"polymath {phase}",
+            "langfuse.trace.input": problem[:2000],
+        },
+    )
 
 
 def _config(run_id: str) -> RunnableConfig:
@@ -76,7 +91,8 @@ class SwarmRunner:
             "status": RunStatus.PLANNING,
         }
         ctx = self.make_context(BudgetTracker(budget))
-        await self.graph.ainvoke(initial, _config(run_id), context=ctx)
+        with _run_span(run_id, "start", problem.statement):
+            await self.graph.ainvoke(initial, _config(run_id), context=ctx)
         return await self.snapshot(run_id)
 
     async def resume(self, run_id: str, decision: Any = _UNSET) -> RunSnapshot:
@@ -89,7 +105,9 @@ class SwarmRunner:
             raise ValueError(f"run {run_id} is waiting for a decision: {current.interrupt}")
         ctx = self.make_context(BudgetTracker(current.values.get("budget") or RunBudget()))
         payload: Any = None if decision is _UNSET else Command(resume=decision)
-        await self.graph.ainvoke(payload, _config(run_id), context=ctx)
+        problem = current.values.get("problem")
+        with _run_span(run_id, "resume", problem.statement if problem else ""):
+            await self.graph.ainvoke(payload, _config(run_id), context=ctx)
         return await self.snapshot(run_id)
 
     async def snapshot(self, run_id: str) -> RunSnapshot:

@@ -15,7 +15,7 @@ from tests.unit.test_reasoner import REPLY
 def mocked_llm(monkeypatch: pytest.MonkeyPatch) -> None:
     """Route LiteLLM to its built-in offline mock so the CLI runs end to end without network."""
     monkeypatch.setattr(litellm, "acompletion", partial(litellm.acompletion, mock_response=REPLY))
-    monkeypatch.setattr(cli, "setup_tracing", lambda **_: None)
+    monkeypatch.setattr(cli, "setup_tracing", lambda *_, **__: None)
     monkeypatch.setattr(cli, "shutdown_tracing", lambda: None)
 
 

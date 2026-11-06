@@ -109,3 +109,16 @@ async def test_emits_genai_span(settings: Settings) -> None:
     assert attrs["polymath.agent.role"] == "reasoner"
     assert attrs["gen_ai.usage.input_tokens"] == 100
     assert "polymath.cost.usd" in attrs
+
+
+async def test_quota_exhaustion_fails_fast_without_retry_or_fallback(settings: Settings) -> None:
+    from polymath.llm.gateway import QuotaExhaustedError
+
+    quota = litellm.exceptions.RateLimitError(
+        "OpenAIException - You have no credits remaining. Add credits to continue",
+        llm_provider="openai", model="m",
+    )  # fmt: skip
+    fake = FakeCompletion([quota, "never", "never"])
+    with pytest.raises(QuotaExhaustedError, match="quota exhausted"):
+        await _gateway(settings, fake).complete(AgentRole.REASONER, MSGS)
+    assert len(fake.calls) == 1  # no retries, no fallback

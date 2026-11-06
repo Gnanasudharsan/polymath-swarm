@@ -6,6 +6,7 @@ LiteLLM reads them from the process environment, which :func:`load_env_file` pop
 
 from __future__ import annotations
 
+import base64
 import os
 from functools import lru_cache
 from pathlib import Path
@@ -120,7 +121,12 @@ class Settings(BaseSettings):
     # Default budget for a run
     budget: RunBudget = Field(default_factory=RunBudget)
 
-    # Tracing (OTLP/HTTP; Langfuse ingests this from Phase 6)
+    # Tracing (OTLP/HTTP). Langfuse: set these three (unprefixed, as in Langfuse's docs).
+    langfuse_host: str | None = Field(default=None, validation_alias="LANGFUSE_HOST")
+    langfuse_public_key: str | None = Field(default=None, validation_alias="LANGFUSE_PUBLIC_KEY")
+    langfuse_secret_key: SecretStr | None = Field(
+        default=None, validation_alias="LANGFUSE_SECRET_KEY"
+    )
     otel_exporter_endpoint: str | None = None
     otel_service_name: str = "polymath"
     otel_console: bool = False
@@ -138,6 +144,15 @@ class Settings(BaseSettings):
         if "reasoning_effort" not in explicit:
             self.reasoning_effort = profile.reasoning_effort
         return self
+
+    def otlp_target(self) -> tuple[str | None, dict[str, str]]:
+        """(endpoint, headers) for trace export: Langfuse if configured, else a plain OTLP URL."""
+        if self.langfuse_host and self.langfuse_public_key and self.langfuse_secret_key:
+            token = f"{self.langfuse_public_key}:{self.langfuse_secret_key.get_secret_value()}"
+            auth = base64.b64encode(token.encode()).decode()
+            endpoint = self.langfuse_host.rstrip("/") + "/api/public/otel/v1/traces"
+            return endpoint, {"Authorization": f"Basic {auth}"}
+        return self.otel_exporter_endpoint, {}
 
     def model_for(self, role: AgentRole) -> str:
         return self.role_models.get(role, DEFAULT_ROLE_MODELS[role])

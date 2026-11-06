@@ -3,6 +3,11 @@
 from __future__ import annotations
 
 import os
+
+# LiteLLM calls load_dotenv() at import unless LITELLM_MODE != "DEV"; tests must never see the
+# local .env (model profile, spend ledger). Set before anything imports litellm.
+os.environ["LITELLM_MODE"] = "PRODUCTION"
+
 from collections.abc import Sequence
 from types import SimpleNamespace
 from typing import Any

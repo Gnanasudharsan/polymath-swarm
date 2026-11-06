@@ -9,7 +9,7 @@ computation, formal verification, critique, synthesis) collaborate through a sha
 Every claim in the final answer carries evidence: a verified citation, a reproduced computation,
 or a Lean 4 proof that compiles with zero `sorry`.
 
-> **Status:** early development — Phase 5 (memory & knowledge) complete. See [PROGRESS.md](PROGRESS.md).
+> **Status:** early development — Phase 6 (evals & observability) complete. See [PROGRESS.md](PROGRESS.md).
 
 ## Architecture
 
@@ -128,6 +128,34 @@ Each server speaks MCP over stdio and works with any MCP client:
 ```bash
 uv run pytest -m integration -q
 ```
+
+## Results: single agent vs swarm
+
+From [evals/reports/2026-11-05](evals/reports/2026-11-05/report.md). Small samples, indicative
+only. OpenAI profile (gpt-5 for Lean, gpt-5-mini elsewhere); deterministic scoring.
+
+| Suite | n | Single agent | Swarm | Swarm verified-claim rate | Hallucinated citations (single → swarm) | $/problem (single → swarm) |
+|---|---|---|---|---|---|---|
+| miniF2F (Lean 4, `mathd_*`) | 3 | 0% | **33%** | 5% | n/a | $0.14 → $0.12 |
+| MATH Level 5 | 6 | 100% | 100% | 64% | n/a | $0.0005 → $0.007 |
+| Research QA | 6 | **67%** | 33% | 100% | **50% → 0%** | $0.001 → $0.006 |
+
+![accuracy](evals/reports/2026-11-05/accuracy.png)
+
+The swarm trades coverage for trust. It proves what the single agent can't (miniF2F), matches it on
+MATH while backing 64% of its claims with re-run computations, and on research questions never
+cites a paper that doesn't say what it claims. The single agent got more research answers "right",
+but half of its citations were unsupported. Reproduce with `uv run polymath eval --suite all --n 5`.
+
+### Observability
+
+```bash
+docker compose --profile observability up -d --wait
+```
+
+With `LANGFUSE_HOST/PUBLIC_KEY/SECRET_KEY` set (see `.env.example`), every run is a trace in
+self-hosted Langfuse at http://localhost:3000: one span per agent task and tool call, plus every
+LLM generation with model, tokens and cost.
 
 ## Roadmap
 
